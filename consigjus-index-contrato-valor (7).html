@@ -1,0 +1,2342 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Buscador de Rubricas do HISCRE</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        .header {
+            background: linear-gradient(135deg, #1e3a5f 0%, #2c5282 100%);
+            color: white;
+            padding: 15px 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .logo-icon {
+            width: 50px; height: 50px;
+            background: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #1e3a5f;
+            font-weight: bold;
+            font-size: 24px;
+        }
+        .logo-text h1 { font-size: 24px; font-weight: 600; }
+        .logo-text span { font-size: 12px; opacity: 0.9; }
+        .main-container {
+            display: block;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .content-wrapper {
+            display: flex;
+            gap: 20px;
+        }
+        .sidebar {
+            width: 300px;
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            height: fit-content;
+        }
+        .sidebar h3 {
+            color: #1e3a5f;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+        .upload-area {
+            border: 2px dashed #2c5282;
+            border-radius: 8px;
+            padding: 30px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: #f7fafc;
+            margin-bottom: 15px;
+            display: block;
+        }
+        .upload-area:hover, .upload-area.dragover {
+            background: #e6fffa;
+            border-color: #38b2ac;
+        }
+        .upload-area input { display: none; }
+        .upload-icon { font-size: 40px; margin-bottom: 10px; }
+        .file-info {
+            background: #e6fffa;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+            font-size: 14px;
+            display: none;
+        }
+        .btn {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-bottom: 10px;
+            transition: all 0.3s;
+        }
+        .btn-primary { background: #2c5282; color: white; }
+        .btn-primary:hover { background: #1e3a5f; }
+        .btn-secondary { background: #e2e8f0; color: #4a5568; }
+        .btn-secondary:hover { background: #cbd5e0; }
+        .btn-success { background: #38b2ac; color: white; }
+        .btn-success:hover { background: #319795; }
+        .btn-modern { background: linear-gradient(135deg, #1a365d, #2b6cb0); color: white; }
+        .btn-modern:hover { background: linear-gradient(135deg, #0f2744, #1e4a8a); }
+        .tabs-container {
+            flex: 1;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .tabs-header {
+            display: flex;
+            background: #f7fafc;
+            border-bottom: 2px solid #e2e8f0;
+        }
+        .tab-btn {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            color: #4a5568;
+            transition: all 0.3s;
+            border-bottom: 3px solid transparent;
+        }
+        .tab-btn.active {
+            color: #2c5282;
+            border-bottom-color: #2c5282;
+            background: white;
+        }
+        .tab-btn:hover { background: #edf2f7; }
+        .tab-content { display: none; padding: 30px; }
+        .tab-content.active { display: block; }
+        .accordion {
+            margin-bottom: 15px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .accordion-header {
+            background: #2c5282;
+            color: white;
+            padding: 15px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 600;
+        }
+        .accordion-header:hover { background: #1e3a5f; }
+        .accordion-content { display: none; padding: 15px; background: white; }
+        .accordion-content.show { display: block; }
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        .data-table th, .data-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .data-table th {
+            background: #f7fafc;
+            font-weight: 600;
+            color: #2c5282;
+        }
+        .data-table tr:hover { background: #f7fafc; }
+        .search-box {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 5px;
+            font-size: 16px;
+            margin-bottom: 20px;
+        }
+        .search-box:focus { outline: none; border-color: #2c5282; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #4a5568;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e2e8f0;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        .value-filter-box {
+            margin-top: 18px;
+            padding: 16px;
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            border: 1px solid #dbe3ec;
+            border-left: 4px solid #38b2ac;
+            border-radius: 8px;
+        }
+        .value-filter-title {
+            color: #1e3a5f;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+        .value-filter-box .form-group { margin-bottom: 0; }
+        .value-filter-box small { color: #718096; font-size: 12px; }
+        .info-box {
+            background: #e6fffa;
+            border-left: 4px solid #38b2ac;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+        }
+        .warning-box {
+            background: #fffaf0;
+            border-left: 4px solid #ed8936;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+        }
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .metric-card {
+            background: #f7fafc;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            border: 2px solid #e2e8f0;
+        }
+        .metric-value {
+            font-size: 28px;
+            font-weight: bold;
+            color: #2c5282;
+        }
+        .metric-label {
+            color: #718096;
+            font-size: 14px;
+            margin-top: 5px;
+        }
+        .text-center { text-align: center; }
+        .mt-20 { margin-top: 20px; }
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .badge-success { background: #c6f6d5; color: #22543d; }
+        .badge-warning { background: #feebc8; color: #744210; }
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .button-group .btn { width: auto; margin: 0; }
+        .total-info {
+            background: #f7fafc;
+            padding: 12px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #2c5282;
+            font-weight: 600;
+            color: #2c5282;
+        }
+        .export-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            align-items: center;
+            padding: 16px;
+            background: #f8fafc;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+        }
+        .export-group .btn { width: auto; margin: 0; }
+        .export-label {
+            font-size: 13px;
+            color: #64748b;
+            font-weight: 600;
+            margin-right: 8px;
+        }
+        .filter-actions { margin-bottom: 0; }
+        .filter-actions .btn { width: auto; min-width: 160px; }
+        .value-warning { margin-top: 10px; padding: 10px 12px; border-left: 3px solid #ed8936; background: #fffaf0; color: #744210; border-radius: 5px; font-size: 12px; line-height: 1.5; }
+        .copy-values-row { display: flex; align-items: center; margin: 0 0 20px; }
+        .btn-copy-values {
+            width: auto !important; margin: 0 !important; padding: 6px 10px !important;
+            font-size: 12px !important; font-weight: 600; color: #64748b;
+            background: transparent; border: 1px solid #cbd5e0; border-radius: 5px;
+        }
+        .btn-copy-values:hover { background: #f8fafc; color: #2c5282; border-color: #94a3b8; }
+        .copy-feedback { font-size: 11px; color: #38a169; margin-left: 8px; opacity: 0; transition: opacity .2s; }
+        .copy-feedback.show { opacity: 1; }
+        /* Layout compacto para reduzir rolagem e aproveitar melhor a largura */
+        .main-container { max-width: 1450px; padding: 18px 20px; }
+        .content-wrapper { gap: 16px; }
+        .sidebar { width: 270px; }
+        .tabs-container { min-width: 0; }
+        .tab-content { padding: 22px; }
+        .compact-row { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+        .compact-row .form-group { margin-bottom: 8px; }
+        .compact-row .form-group input { padding: 9px 10px; }
+        .compact-filter-title { margin: 14px 0 10px !important; }
+        .value-filter-box { margin-top: 10px; padding: 12px 14px; }
+        .value-filter-box .form-row { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+        .value-filter-box .form-group label { margin-bottom: 4px; }
+        .value-filter-box .form-group input { padding: 8px 10px; }
+        .value-filter-box small { display: block; margin-top: 8px; }
+        .filter-actions { margin-top: 10px !important; }
+        .filter-actions .btn { min-width: 145px; padding: 9px 14px; }
+        .document-info-grid { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 10px; }
+        .document-info-grid p { margin: 0; padding: 9px 10px; background: #f7fafc; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 13px; }
+        @media (max-width: 1050px) {
+            .main-container { max-width: 1200px; }
+            .sidebar { width: 250px; }
+            .compact-row, .value-filter-box .form-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .document-info-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        }
+        @media (max-width: 760px) {
+            .content-wrapper { flex-direction: column; }
+            .sidebar { width: 100%; }
+            .compact-row, .value-filter-box .form-row, .document-info-grid { grid-template-columns: 1fr; }
+        }
+        .modal-overlay {
+            position: fixed; inset: 0; background: rgba(15, 39, 68, 0.58);
+            display: none; align-items: center; justify-content: center;
+            padding: 20px; z-index: 9999; backdrop-filter: blur(3px);
+        }
+        .modal-overlay.show { display: flex; }
+        .beneficiario-modal {
+            width: min(680px, 100%); background: #fff; border-radius: 14px;
+            box-shadow: 0 20px 60px rgba(15, 39, 68, 0.25); overflow: hidden;
+            animation: modalIn .18s ease-out;
+        }
+        @keyframes modalIn { from { opacity: 0; transform: translateY(10px) scale(.985); } to { opacity: 1; transform: none; } }
+        .modal-header {
+            display: flex; justify-content: space-between; align-items: flex-start;
+            padding: 22px 24px; background: linear-gradient(135deg, #1e3a5f, #2c5282); color: #fff;
+        }
+        .modal-kicker { font-size: 11px; letter-spacing: 1.5px; opacity: .78; font-weight: 700; }
+        .modal-header h3 { margin-top: 5px; font-size: 21px; font-weight: 650; }
+        .modal-close { background: transparent; border: 0; color: #fff; font-size: 28px; line-height: 1; cursor: pointer; opacity: .8; }
+        .modal-close:hover { opacity: 1; }
+        .modal-body { padding: 22px 24px 8px; }
+        .modal-info-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+        .modal-info-card { background: #f7fafc; border: 1px solid #e2e8f0; border-radius: 9px; padding: 13px 15px; min-width: 0; }
+        .modal-info-wide { grid-column: 1 / -1; }
+        .modal-info-card span { display: block; color: #718096; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 5px; }
+        .modal-info-card strong { display: block; color: #1e3a5f; font-size: 15px; word-break: break-word; }
+        .modal-footer { display: flex; justify-content: flex-end; padding: 14px 24px 22px; }
+        .modal-action { width: auto; min-width: 220px; margin: 0; }
+        @media (max-width: 600px) { .modal-info-grid { grid-template-columns: 1fr; } .modal-info-wide { grid-column: auto; } .modal-footer .btn { width: 100%; } }
+
+        /* Painel profissional do cruzamento de contratos */
+        .consig-identidade{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;margin:16px 0}
+        .consig-identidade-card{background:#fff;border:1px solid #dbe4ee;border-radius:10px;padding:14px 16px;box-shadow:0 2px 8px rgba(20,45,75,.045)}
+        .consig-identidade-card .eyebrow{font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:#718096;font-weight:700;margin-bottom:6px}
+        .consig-identidade-card .nome{font-size:16px;font-weight:700;color:#1e3a5f;line-height:1.35;overflow-wrap:anywhere}
+        .consig-identidade-card .arquivo{font-size:12px;color:#718096;margin-top:5px}
+        .consig-identidade-card.match{border-left:4px solid #2f9e79}
+        .consig-identidade-card.mismatch{border-left:4px solid #d94841}
+        .consig-identidade-card.pending{border-left:4px solid #d69e2e}
+        .consig-alerta-identidade{padding:14px 16px;border-radius:9px;margin:12px 0;background:#fff5f5;border:1px solid #fed7d7;color:#822727;line-height:1.5}
+        .consig-alerta-identidade.ok{background:#f0fff8;border-color:#b7ebd2;color:#225b43}
+        .consig-alerta-identidade label{display:flex;gap:9px;align-items:flex-start;margin-top:10px;font-weight:600}
+        .consig-result-header{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;margin:20px 0 12px}
+        .consig-result-header h3{font-size:18px;color:#1e3a5f;margin:0}
+        .consig-result-header p{font-size:12px;color:#718096;margin:4px 0 0}
+        .consig-contract-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(245px,1fr));gap:12px}
+        .consig-contract-card{background:#fff;border:1px solid #dbe4ee;border-radius:10px;padding:15px;box-shadow:0 3px 10px rgba(20,45,75,.04)}
+        .consig-contract-card .contract-number{font-weight:750;color:#1e3a5f;font-size:14px;overflow-wrap:anywhere;margin-bottom:8px}
+        .consig-contract-card .metric{display:flex;justify-content:space-between;gap:12px;padding:5px 0;border-top:1px solid #edf1f5;font-size:13px;color:#526174}
+        .consig-contract-card .metric strong{color:#243b53;text-align:right}
+        .consig-table-wrap{overflow:auto;border:1px solid #dbe4ee;border-radius:10px;background:#fff;box-shadow:0 3px 12px rgba(20,45,75,.04)}
+        .consig-matrix{width:100%;border-collapse:separate;border-spacing:0;min-width:680px;font-size:13px}
+        .consig-matrix th{background:#edf3f8;color:#24415f;text-align:left;padding:13px 14px;border-bottom:1px solid #d8e2ec;font-weight:700;white-space:nowrap}
+        .consig-matrix th:first-child{position:sticky;left:0;z-index:2;background:#edf3f8}
+        .consig-matrix td{padding:11px 14px;border-bottom:1px solid #e8edf2;color:#334e68;white-space:nowrap}
+        .consig-matrix td:first-child{position:sticky;left:0;background:#fff;font-weight:700;color:#243b53}
+        .consig-matrix tr:last-child td{background:#f3f7fa;font-weight:700;border-bottom:0}
+        .consig-matrix tr:last-child td:first-child{background:#f3f7fa}
+        .consig-matrix small{color:#8292a6}
+        .consig-copy-btn{background:#1e6b87!important;color:#fff!important;border:0!important;border-radius:7px!important;padding:9px 14px!important;font-size:13px!important;width:auto!important;margin:0!important}
+        .consig-copy-btn:hover{background:#174f66!important}
+        @media(max-width:700px){.consig-identidade{grid-template-columns:1fr}.consig-contract-cards{grid-template-columns:1fr}}
+
+    </style>
+</head>
+<body>
+
+    <div class="header" id="mainHeader">
+        <div class="header-content">
+            <div class="logo">
+                <div class="logo-icon">🏛️</div>
+                <div class="logo-text">
+                    <h1>Buscador Institucional de Rubricas</h1>
+                    <span>Sistema de Análise Documental HISCRE</span>
+                </div>
+            </div>
+            <div style="font-size: 14px; opacity: 0.9;">
+                🔒 Processamento 100% Local
+            </div>
+        </div>
+    </div>
+
+    <div class="main-container" id="mainContainer">
+        <div class="content-wrapper">
+            <div class="sidebar">
+                <h3>📁 Upload do Documento</h3>
+
+                <div class="warning-box" style="font-size: 12px; padding: 10px;">
+                    ⚠️ Os arquivos não são salvos na nuvem. Todo processamento ocorre localmente no seu computador.
+                </div>
+
+                <label class="upload-area" id="uploadArea" for="fileInput">
+                    <input type="file" id="fileInput" accept=".pdf" onchange="handleFileSelect(event)">
+                    <div class="upload-icon">📄</div>
+                    <div>Arraste um PDF aqui ou clique para selecionar</div>
+                    <div style="font-size: 12px; color: #718096; margin-top: 5px;">Apenas arquivos PDF</div>
+                </label>
+
+                <div class="file-info" id="fileInfo"></div>
+
+                <button class="btn btn-secondary" onclick="clearFile()" id="btnClear" style="display: none;">
+                    🗑️ Limpar Arquivo
+                </button>
+
+                <div style="margin-top: 20px; padding-top: 20px; border-top: 2px solid #e2e8f0;">
+                    <h4 style="margin-bottom: 10px; color: #2c5282;">📊 Status</h4>
+                    <div id="statusInfo" style="font-size: 14px; color: #718096;">
+                        Nenhum arquivo carregado
+                    </div>
+                </div>
+            </div>
+
+            <div class="tabs-container">
+                <div class="tabs-header">
+                    <button class="tab-btn active" onclick="switchTab('referencia')">📋 Referência</button>
+                    <button class="tab-btn" onclick="switchTab('analise')">📊 Análise de PDF</button>
+                    <button class="tab-btn" onclick="switchTab('buscador')">🔍 Buscador no PDF</button>
+                    <button class="tab-btn" onclick="switchTab('consignado')">🏦 Cruzamento de contratos</button>
+                </div>
+
+                <div class="tab-content active" id="tab-referencia">
+                    <h2 style="color: #1e3a5f; margin-bottom: 20px;">📋 Referência de Rubricas do HISCRE</h2>
+
+                    <div class="info-box">
+                        <strong>ℹ️ Consulta Rápida:</strong><br>
+                        • Use a busca abaixo para encontrar rubricas específicas<br>
+                        • Navegue pelas categorias para explorar todas as rubricas disponíveis<br>
+                        • Consulte a descrição oficial de cada código
+                    </div>
+
+                    <input type="text" class="search-box" id="searchRubrica" placeholder="🔍 Buscar rubrica por código ou descrição..." onkeyup="filterRubricas()">
+
+                    <div id="rubricasContainer">
+                    </div>
+                </div>
+
+                <div class="tab-content" id="tab-analise">
+                    <h2 style="color: #1e3a5f; margin-bottom: 20px;">📊 Análise de Rubricas do Documento</h2>
+
+                    <div class="info-box">
+                        <strong>ℹ️ Como funciona:</strong><br>
+                        • Faça upload do PDF do demonstrativo HISCRE na sidebar e clique em "Ler Documento"<br>
+                        • O sistema identificará TODAS as rubricas únicas presentes no documento<br>
+                        • Você poderá baixar o relatório completo em CSV ou PDF
+                    </div>
+
+                    <div id="analiseContent" style="display: none;">
+                        <div class="metrics-grid">
+                            <div class="metric-card">
+                                <div class="metric-value" id="metricTotal">0</div>
+                                <div class="metric-label">Total de Rubricas Únicas</div>
+                            </div>
+                            <div class="metric-card">
+                                <div class="metric-value" id="metricOcorrencias">0</div>
+                                <div class="metric-label">Total de Ocorrências</div>
+                            </div>
+                            <div class="metric-card">
+                                <div class="metric-value" id="metricSemRef">0</div>
+                                <div class="metric-label">Rubricas sem Referência</div>
+                            </div>
+                        </div>
+
+                        <div style="margin-bottom: 20px;">
+                            <button class="btn btn-success" onclick="exportToPDF()" style="width: auto; padding: 12px 24px;">
+                                📄 Exportar Relatório PDF
+                            </button>
+                            <button class="btn btn-primary" onclick="exportToCSV()" style="width: auto; padding: 12px 24px; margin-left: 10px;">
+                                ⬇️ Baixar CSV
+                            </button>
+                        </div>
+
+                        <table class="data-table" id="analiseTable">
+                            <thead>
+                                <tr>
+                                    <th>Rubrica</th>
+                                    <th>Descrição no Documento</th>
+                                    <th>Descrição de Referência</th>
+                                    <th>Ocorrências</th>
+                                </tr>
+                            </thead>
+                            <tbody id="analiseTableBody">
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div id="analiseEmpty" class="text-center" style="padding: 40px; color: #718096;">
+                        <p>Faça upload do documento HISCRE na sidebar e proceda com a leitura para começar a análise.</p>
+                    </div>
+                </div>
+
+                <div class="tab-content" id="tab-consignado">
+                    <h2 style="color:#1e3a5f;margin-bottom:16px">🏦 Cruzamento HISCONSIG × HISCRE</h2>
+                    <div class="info-box">Carregue os PDFs do HISCONSIG e HISCRE para cruzar os contratos. Opcionalmente, inclua a decisão judicial: o leitor localizará números de contratos, apresentará trechos e páginas, classificará o contexto como favorável, desfavorável ou inconclusivo e sugerirá quais contratos selecionar. A classificação é auxiliar e exige conferência humana.</div>
+                    <div class="form-row">
+                        <div class="form-group"><label>1. Extrato de Empréstimo Consignado (HISCONSIG)</label><input id="hiscnsInput" type="file" accept="application/pdf,.pdf"></div>
+                        <div class="form-group"><label>2. Histórico de Créditos (HISCRE)</label><input id="hiscreConsigInput" type="file" accept="application/pdf,.pdf"></div>
+                    </div>
+                    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:12px 0"><button class="btn btn-primary" onclick="lerDocumentosConsignado()" style="width:auto">Ler os dois documentos</button><span id="consigStatus" style="color:#4a5568">Aguardando os documentos.</span></div>
+                    <div class="value-filter-box" style="margin-top:16px">
+                        <div class="value-filter-title">3. Decisão judicial (opcional)</div>
+                        <div class="form-row" style="align-items:end">
+                            <div class="form-group"><label>Arraste ou selecione a decisão em PDF</label><input id="decisaoInput" type="file" accept="application/pdf,.pdf"></div>
+                            <div class="form-group" style="display:flex;align-items:end"><button class="btn btn-primary" onclick="analisarDecisaoContratos()" style="width:auto">Analisar decisão</button></div>
+                        </div>
+                        <div id="decisaoStatus" style="font-size:13px;color:#4a5568">A análise da decisão é opcional. PDFs digitalizados como imagem podem exigir OCR.</div>
+                        <div id="decisaoResultados" style="margin-top:12px"></div>
+                    </div>
+                    <div id="identidadeDocumentos" style="display:none"></div>
+                    <div id="contratosPainel" style="display:none;margin:18px 0">
+                        <div class="value-filter-box">
+                            <div class="value-filter-title">Selecione os contratos para cruzamento</div>
+                            <div id="listaContratosSelecao" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:8px 16px"></div>
+                            <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:16px">
+                                <button class="btn btn-success" onclick="cruzarContratosSelecionados()" style="width:auto">Cruzar contratos selecionados</button>
+                                <label style="display:flex;align-items:center;gap:8px;font-weight:600;color:#1e3a5f;margin:0"><input id="somarContratos" type="checkbox" onchange="renderizarMatrizContratos()" style="width:auto;margin:0"> Somar valores dos contratos por competência</label>
+                            </div>
+                            <small>A soma considera somente as correspondências exatas encontradas no HISCRE. Desmarque para manter os valores separados.</small>
+                        </div>
+                    </div>
+                    <div id="contratoResumo" style="margin-top:18px"></div>
+                    <div id="contratoResultados" style="margin-top:14px;overflow-x:auto"></div>
+                    <div id="relatorioContratoAcoes" class="value-filter-box" style="display:none;margin-top:18px">
+                        <div class="value-filter-title">📄 Relatório do cruzamento</div>
+                        <div class="form-group" style="margin-bottom:12px">
+                            <label for="observacoesRelatorioContratos">Observações / identificação do documento</label>
+                            <textarea id="observacoesRelatorioContratos" rows="3" placeholder="Ex.: OD nº ______; documento analisado; ressalvas ou informações relevantes para o cálculo."></textarea>
+                            <small>Este campo será incluído no PDF. Você pode informar o OD do documento analisado ou outras observações.</small>
+                        </div>
+                        <button type="button" class="btn btn-success" style="width:auto" onclick="gerarPDFRelatorioContratos()">▤ Gerar PDF do relatório</button>
+                    </div>
+                </div>
+
+                <div class="tab-content" id="tab-buscador">
+                    <h2 style="color: #1e3a5f; margin-bottom: 20px;">🔍 Buscador de Rubricas no Documento</h2>
+
+                    <div class="info-box">
+                        <strong>ℹ️ Como funciona:</strong><br>
+                        • Ao carregar o PDF, a leitura é realizada automaticamente.<br>
+                        • Informe as rubricas abaixo para filtrar os registros; o resultado é atualizado automaticamente.<br>
+                        • O sistema localiza o status de pagamento real linha a linha do PDF.
+                    </div>
+
+                    <div class="form-row compact-process-row" style="margin-bottom: 8px;">
+                        <div class="form-group">
+                            <label>Número do Processo</label>
+                            <input type="text" id="numProcesso" placeholder="Ex: 0001234-55.2023.5.05.0000">
+                        </div>
+                        <div class="form-group">
+                            <label>Nome da Parte Autora (Automático)</label>
+                            <input type="text" id="nomeAutor" placeholder="Será preenchido automaticamente ao ler o PDF">
+                        </div>
+                    </div>
+
+                    <h3 class="compact-filter-title" style="color: #2c5282; margin: 20px 0 15px;">🔎 Filtrar Resultados (Opcional)</h3>
+
+                    <div class="form-row compact-row">
+                        <div class="form-group">
+                            <label>Rubrica 1</label>
+                            <input type="text" class="rubrica-input" id="r1" placeholder="Ex: 101" maxlength="3" oninput="showDescription(this, 'desc1'); executarBuscaAutomatica()">
+                            <small id="desc1" style="color: #718096;"></small>
+                        </div>
+                        <div class="form-group">
+                            <label>Rubrica 2</label>
+                            <input type="text" class="rubrica-input" id="r2" placeholder="Ex: 201" maxlength="3" oninput="showDescription(this, 'desc2'); executarBuscaAutomatica()">
+                            <small id="desc2" style="color: #718096;"></small>
+                        </div>
+                        <div class="form-group">
+                            <label>Rubrica 3</label>
+                            <input type="text" class="rubrica-input" id="r3" placeholder="Ex: 104" maxlength="3" oninput="showDescription(this, 'desc3'); executarBuscaAutomatica()">
+                            <small id="desc3" style="color: #718096;"></small>
+                        </div>
+                        <div class="form-group">
+                            <label>Rubrica 4</label>
+                            <input type="text" class="rubrica-input" id="r4" placeholder="Ex: 203" maxlength="3" oninput="showDescription(this, 'desc4'); executarBuscaAutomatica()">
+                            <small id="desc4" style="color: #718096;"></small>
+                        </div>
+                    </div>
+
+                    <div class="value-filter-box">
+                        <div class="value-filter-title">💰 Consultar valores exatos</div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="valor1">Valor 1 (R$)</label>
+                                <input type="text" class="valor-consulta" id="valor1" inputmode="decimal" placeholder="Ex: 678,00" oninput="onValorConsultaInput(this)">
+                            </div>
+                            <div class="form-group">
+                                <label for="valor2">Valor 2 (R$)</label>
+                                <input type="text" class="valor-consulta" id="valor2" inputmode="decimal" placeholder="Ex: 608,39" oninput="onValorConsultaInput(this)">
+                            </div>
+                            <div class="form-group">
+                                <label for="valor3">Valor 3 (R$)</label>
+                                <input type="text" class="valor-consulta" id="valor3" inputmode="decimal" placeholder="Ex: 69,00" oninput="onValorConsultaInput(this)">
+                            </div>
+                            <div class="form-group">
+                                <label for="valor4">Valor 4 (R$)</label>
+                                <input type="text" class="valor-consulta" id="valor4" inputmode="decimal" placeholder="Ex: 14,14" oninput="onValorConsultaInput(this)">
+                            </div>
+                        </div>
+                        <small>Os valores são consultados individualmente. Se houver no documento um valor com diferença de exatamente R$ 0,01 para algum valor informado, o sistema avisará sem incluir esse valor automaticamente no resultado.</small>
+                        <div id="avisosValores" class="value-warning" style="display:none;"></div>
+                    </div>
+
+                    <div class="button-group filter-actions" style="margin-top: 18px;">
+                        <button class="btn btn-secondary" type="button" onclick="removerFiltros()">
+                            ✕ Remover filtros
+                        </button>
+                    </div>
+
+                    <div id="buscadorResult" style="display: none; margin-top: 30px;">
+                        <div style="background: #f7fafc; padding: 12px; border-radius: 8px; margin-bottom: 14px; border: 1px solid #e2e8f0;">
+                            <h4 style="color: #2c5282; margin-bottom: 9px;">🔗 Informações do Documento Carregado</h4>
+                            <div class="document-info-grid">
+                                <p><strong>Nome:</strong> <span id="resultNome">-</span></p>
+                                <p><strong>NB(s):</strong> <span id="resultNB">-</span></p>
+                                <p><strong>Período:</strong> <span id="resultPeriodo">-</span></p>
+                                <p><strong>Emissão:</strong> <span id="resultDataEmissao">-</span></p>
+                                <p><strong>Processo:</strong> <span id="resultProcesso">-</span></p>
+                            </div>
+                        </div>
+
+                        <div class="total-info" id="totalRegistrosTopo">
+                            Total de registros listados: <strong>0</strong>
+                        </div>
+
+                        <div class="button-group">
+                            <button class="btn btn-secondary" onclick="toggleStatusFilter('all')">
+                                Exibir todos
+                            </button>
+                            <button class="btn btn-success" onclick="toggleStatusFilter('Pago')">
+                                Exibir apenas pagos
+                            </button>
+                            <button class="btn" style="background: #e53e3e; color: white;" onclick="toggleStatusFilter('Não Pago')">
+                                Exibir apenas Não Pagos
+                            </button>
+
+                            <div class="copy-values-row" style="margin-left: auto; margin-bottom: 0;">
+                                <button type="button" class="btn btn-copy-values" onclick="copiarValoresExibidos()" title="Copia toda a tabela, com cabeçalhos e colunas, pronta para colar no Excel">
+                                    ⧉ Copiar tabela para Excel
+                                </button>
+                                <span id="copyValuesFeedback" class="copy-feedback">Tabela copiada</span>
+                            </div>
+                        </div>
+
+                        <!-- GRUPO DE EXPORTAÇÃO COM DUAS OPÇÕES -->
+                        <div class="export-group">
+                            <span class="export-label">📄 Exportar Relatório:</span>
+                            <button class="btn btn-success" onclick="exportBuscadorPDF()">
+                                PDF Clássico
+                            </button>
+                            <button class="btn btn-modern" onclick="exportBuscadorPDFModerno()">
+                                🏛️ PDF Moderno (Enterprise)
+                            </button>
+                            <button class="btn btn-primary" onclick="exportBuscadorCSV()">
+                                ⬇️ Baixar CSV
+                            </button>
+                        </div>
+
+                        <table class="data-table" id="buscadorTable">
+                            <thead>
+                                <tr>
+                                    <th>Página</th>
+                                    <th>Comp.</th>
+                                    <th>Rubrica</th>
+                                    <th>Descrição</th>
+                                    <th>Valor (R$)</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="buscadorTableBody">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de confirmação da leitura automática -->
+    <div class="modal-overlay" id="beneficiarioModal" aria-hidden="true">
+        <div class="beneficiario-modal" role="dialog" aria-modal="true" aria-labelledby="modalTitulo">
+            <div class="modal-header">
+                <div>
+                    <span class="modal-kicker">LEITURA CONCLUÍDA</span>
+                    <h3 id="modalTitulo">Informações do Documento Carregado</h3>
+                </div>
+                <button class="modal-close" type="button" onclick="fecharModalBeneficiario()" aria-label="Fechar">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="modal-info-grid">
+                    <div class="modal-info-card modal-info-wide">
+                        <span>Beneficiário</span>
+                        <strong id="modalNome">—</strong>
+                    </div>
+                    <div class="modal-info-card">
+                        <span>NB(s) encontrados</span>
+                        <strong id="modalNB">—</strong>
+                    </div>
+                    <div class="modal-info-card">
+                        <span>Período inicial</span>
+                        <strong id="modalPeriodoInicial">—</strong>
+                    </div>
+                    <div class="modal-info-card">
+                        <span>Período final</span>
+                        <strong id="modalPeriodoFinal">—</strong>
+                    </div>
+                    <div class="modal-info-card">
+                        <span>Competências encontradas</span>
+                        <strong id="modalCompetencias">—</strong>
+                    </div>
+                    <div class="modal-info-card modal-info-wide">
+                        <span>Data de emissão do documento</span>
+                        <strong id="modalDataEmissao">—</strong>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary modal-action" type="button" onclick="fecharModalBeneficiario()">
+                    Continuar para o buscador →
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+        const descricoesRubricas = {
+            "101": "VALOR TOTAL DE MR DO PERÍODO", "103": "Abono do Governo Federal", "104": "VALOR DO DÉCIMO-TERCEIRO SALÁRIO",
+            "105": "SALARIO FAMILIA", "106": "Parcela de diferença de revisão da RMI", "107": "Complemento positivo",
+            "110": "Correção monetária", "111": "Parcela de gratificação de ex-combatente", "115": "Abono anual de ex-combatente (14º salário)",
+            "121": "COMPLEMENTO A TITULO DE CPMF", "125": "CP – Decisão judicial", "131": "CP - REVISAO BENEFICIO SISTEMA CENTRAL",
+            "135": "Gratificação de qualidade e produtividade", "137": "ADIANTAMENTO P/ARREDONDAMENTO DO CRÉDITO", "145": "Adicional Talidomida",
+            "146": "Indenização por ação judicial específica", "156": "CP – Revisão de teto", "159": "CORRECAO MONETARIA COMPLEMENTAR DE RENDA",
+            "201": "IMPOSTO DE RENDA RETIDO NA FONTE", "202": "Pensão Alimentícia – Débito", "203": "CONSIGNAÇÃO",
+            "204": "Imposto de Renda no Exterior", "205": "Diferença de Imposto de Renda – Débito", "206": "Desconto do INSS",
+            "207": "DESCONTO DE I.R. SOBRE 13º SALÁRIO", "208": "Contribuição Previdenciária sobre 13º Salário", "209": "Diferença de IR sobre 13º Salário – Débito",
+            "210": "Pensão Alimentícia sobre 13º Salário", "211": "Desconto de IR sobre 14º Salário", "212": "Contribuição Previdenciária sobre 14º Salário",
+            "213": "Pensão Alimentícia sobre 14º Salário", "214": "CONSIGNAÇÃO SOBRE 13 SAL.", "215": "AJUSTE DO ARREDONDAMENTO DE CRÉDITOS",
+            "216": "CONSIGNAÇÃO EMPRÉSTIMO BANCÁRIO", "217": "EMPRÉSTIMO SOBRE A RMC", "218": "13. SALÁRIO PAGO COMPETÊNCIAS ANTERIORES",
+            "227": "DEVOLUCAO DE CPMF", "233": "Desconto para Verificação de Teto", "236": "Décimo Terceiro Salário – Débito",
+            "242": "CONTRIBUICAO SINDIAPI 0800 777 5767", "251": "Décimo Terceiro Salário Pago a Maior", "252": "Desconto por Acumulação de Benefício Já Concedido",
+            "253": "Desconto por Acumulação de Benefício – 13º Salário", "254": "Consignacao CONTRIBUICAO UNIBAP", "268": "CONSIGNACAO - CARTAO",
+            "288": "CONTRIB. AASAP 0800 202 0177", "302": "Abatimento IR por Dependente", "303": "Abatimento a Beneficiário Maior de 65 Anos",
+            "304": "Desconto por Dependente sobre 13º Salário", "305": "Desconto Maior 65 Anos – IR 13º Salário", "308": "Desconto por Dependente sobre 14º Salário",
+            "309": "Desconto Maior 65 Anos – IR 14º Salário", "310": "Desconto de Consignação no IR", "312": "Desconto de Consignação no IR – 13º Salário",
+            "313": "IR Não Recolhido por Ordem Judicial", "314": "IR Não Recolhido por Ordem Judicial – 13º Salário", "316": "SALDO DEVEDOR ARREDONDAMENTO DE CREDITOS",
+            "320": "IR sobre Décimo Terceiro Devolvido", "323": "ADIANTAMENTO DE 13 COMPETENCIA ANTERIOR", "365": "Indenização Talidomida – Lei 12.190/2010",
+            "373": "CP – Artigo 29 ACP-MP242", "375": "CP – Indenização seringueiros", "383": "RESERVA CARTÃO CONSIGNADO", "384": "DESCONTO SIMPLIFICADO DE IR",
+            "385": "DESCONTO SIMPLIFICADO DE IR SOBRE 13", "903": "Saldo de Imposto de Renda – Positivo", "904": "Saldo de Imposto de Renda – Negativo",
+            "916": "CONSIGNAÇÃO IR NA FONTE", "917": "Consignação IR no Exterior", "920": "Consignação empréstimo da CEF"
+        };
+
+        const categoriasRubricas = {
+            "Série 100 - Pagamentos e Receitas": [],
+            "Série 200 - Descontos e Consignações": [],
+            "Série 300 - Ajustes e Informativas": [],
+            "Série 900 - Saldos Finais": []
+        };
+        for(let code in descricoesRubricas){
+            let item = {code: code, desc: descricoesRubricas[code]};
+            if(code.startsWith("1")) categoriasRubricas["Série 100 - Pagamentos e Receitas"].push(item);
+            else if(code.startsWith("2")) categoriasRubricas["Série 200 - Descontos e Consignações"].push(item);
+            else if(code.startsWith("3")) categoriasRubricas["Série 300 - Ajustes e Informativas"].push(item);
+            else if(code.startsWith("9")) categoriasRubricas["Série 900 - Saldos Finais"].push(item);
+        }
+
+        let uploadedFile = null;
+        let objDadosPDF = { nome: "", nbs: [], rubricasUnicas: {}, todasRubricasReal: [], competenciasEncontradas: [], periodoInicial: "", periodoFinal: "", dataEmissao: "" };
+        let currentFilter = 'all';
+        let dadosFiltradosBuscador = [];
+
+        window.addEventListener('DOMContentLoaded', () => {
+            initRubricas();
+        });
+
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape') fecharModalBeneficiario();
+        });
+
+        function initRubricas() {
+            const container = document.getElementById('rubricasContainer');
+            container.innerHTML = '';
+            Object.entries(categoriasRubricas).forEach(([categoria, rubricas]) => {
+                if(rubricas.length === 0) return;
+                const accordion = document.createElement('div');
+                accordion.className = 'accordion';
+                accordion.innerHTML = `
+                    <div class="accordion-header" onclick="toggleAccordion(this)">
+                        <span>${categoria} <small style="font-weight:normal;">(${rubricas.length})</small></span>
+                        <span>▼</span>
+                    </div>
+                    <div class="accordion-content">
+                        <table class="data-table">
+                            <thead><tr><th width="80">Código</th><th>Descrição</th></tr></thead>
+                            <tbody>
+                                ${rubricas.map(r => `
+                                    <tr data-code="${r.code}" data-desc="${r.desc.toLowerCase()}">
+                                        <td><strong>${r.code}</strong></td><td>${r.desc}</td>
+                                    </tr>`).join('')}
+                            </tbody>
+                        </table>
+                    </div>`;
+                container.appendChild(accordion);
+            });
+        }
+
+        function toggleAccordion(header) {
+            const content = header.nextElementSibling;
+            const arrow = header.querySelector('span:last-child');
+            content.classList.toggle('show');
+            arrow.textContent = content.classList.contains('show') ? '▲' : '▼';
+        }
+
+        function filterRubricas() {
+            const searchTerm = document.getElementById('searchRubrica').value.toLowerCase();
+            const accordions = document.querySelectorAll('.accordion');
+            accordions.forEach(accordion => {
+                const rows = accordion.querySelectorAll('tbody tr');
+                let hasVisible = false;
+                rows.forEach(row => {
+                    const match = row.dataset.code.includes(searchTerm) || row.dataset.desc.includes(searchTerm);
+                    row.style.display = match ? '' : 'none';
+                    if (match) hasVisible = true;
+                });
+                if (hasVisible && searchTerm) {
+                    accordion.querySelector('.accordion-content').classList.add('show');
+                    accordion.querySelector('.accordion-header span:last-child').textContent = '▲';
+                }
+            });
+        }
+
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            const alvo = document.getElementById(`tab-${tabName}`);
+            const botao = Array.from(document.querySelectorAll('.tab-btn')).find(btn => btn.getAttribute('onclick') === `switchTab('${tabName}')`);
+            if (botao) botao.classList.add('active');
+            if (alvo) alvo.classList.add('active');
+        }
+
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (file && file.type === 'application/pdf') {
+                uploadedFile = file;
+                document.getElementById('fileInfo').style.display = 'block';
+                document.getElementById('fileInfo').innerHTML = `<strong>✅ Arquivo selecionado:</strong><br>${file.name}`;
+                document.getElementById('btnClear').style.display = 'block';
+                document.getElementById('statusInfo').innerHTML = `<span style="color: #ed8936;">⏳ Lendo automaticamente...</span>`;
+                processPDF();
+            }
+        }
+
+        const uploadArea = document.getElementById('uploadArea');
+        uploadArea.addEventListener('dragover', (e) => { e.preventDefault(); uploadArea.classList.add('dragover'); });
+        uploadArea.addEventListener('dragleave', () => { uploadArea.classList.remove('dragover'); });
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            if (e.dataTransfer.files[0] && e.dataTransfer.files[0].type === 'application/pdf') {
+                document.getElementById('fileInput').files = e.dataTransfer.files;
+                handleFileSelect({ target: { files: e.dataTransfer.files } });
+            }
+        });
+
+        // ============================================================
+        // TRATAMENTO MONETÁRIO — padrão brasileiro
+        // Mantém o valor numérico separado da apresentação visual.
+        // ============================================================
+        function parseValorMonetario(valor) {
+            if (valor === null || valor === undefined) return NaN;
+
+            let texto = String(valor).trim()
+                .replace(/R\$\s*/gi, '')
+                .replace(/[^0-9,.-]/g, '');
+
+            if (!texto) return NaN;
+
+            // Quando há ponto e vírgula, o último separador é o decimal.
+            if (texto.includes(',') && texto.includes('.')) {
+                if (texto.lastIndexOf(',') > texto.lastIndexOf('.')) {
+                    texto = texto.replace(/\./g, '').replace(',', '.');
+                } else {
+                    texto = texto.replace(/,/g, '');
+                }
+            } else if (texto.includes(',')) {
+                texto = texto.replace(/\./g, '').replace(',', '.');
+            } else if (texto.includes('.')) {
+                const partes = texto.split('.');
+                // 1.234 = mil e não 1,234; 00.00 = zero com centavos.
+                if (partes.length > 2 || (partes.length === 2 && partes[1].length === 3 && partes[0].length <= 3)) {
+                    texto = texto.replace(/\./g, '');
+                }
+            }
+
+            const numero = Number(texto);
+            return Number.isFinite(numero) ? numero : NaN;
+        }
+
+        function formatarMoedaBR(valor) {
+            const numero = typeof valor === 'number' ? valor : parseValorMonetario(valor);
+            if (!Number.isFinite(numero)) return 'R$ 0,00';
+            return numero.toLocaleString('pt-BR', {
+                style: 'currency',
+                currency: 'BRL',
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
+        }
+
+        function formatarCampoMoeda(input) {
+            let texto = input.value.replace(/[^0-9,.-]/g, '');
+            if (!texto) return;
+
+            const numero = parseValorMonetario(texto);
+            if (Number.isFinite(numero)) {
+                input.dataset.valorNumerico = String(numero);
+            }
+        }
+
+        function obterLimiteMonetario(id) {
+            const input = document.getElementById(id);
+            if (!input || !input.value.trim()) return null;
+            const valor = parseValorMonetario(input.value);
+            return Number.isFinite(valor) ? valor : null;
+        }
+
+        function extrairInformacoesGeraisPrimeiraPagina(linhas) {
+            const textoPagina = linhas.join(' ').replace(/\s+/g, ' ').trim();
+
+            // Emissão: prioriza uma data/hora associada a termos de emissão;
+            // se não existir, usa a primeira data/hora encontrada na primeira página.
+            const padraoDataHora = /(\d{2}\/\d{2}\/\d{4}\s+\d{2}:\d{2}:\d{2})/;
+            const linhaEmissao = linhas.find(l => /data\s+de\s+emiss[aã]o|emiss[aã]o|emitido|emitida/i.test(l) && padraoDataHora.test(l));
+            const matchEmissao = linhaEmissao ? linhaEmissao.match(padraoDataHora) : textoPagina.match(padraoDataHora);
+            objDadosPDF.dataEmissao = matchEmissao ? matchEmissao[1] : '';
+
+            // Período: prioriza uma linha explicitamente rotulada como período/competência.
+            const data = '(\\d{2}\\/\\d{2}\\/\\d{4})';
+            const mesAno = '(\\d{2}\\/\\d{4})';
+            const separador = '(?:a|até|ate|[-–—])';
+            const textoPeriodo = linhas.filter(l => /per[ií]odo|compet[eê]ncia|inicial|final/i.test(l)).join(' ');
+            const padroesPeriodo = [
+                new RegExp('(?:per[ií]odo(?:\\s+de)?|compet[eê]ncia(?:s)?)\\s*[:\\-]?\\s*' + data + '\\s*' + separador + '\\s*' + data, 'i'),
+                new RegExp('(?:per[ií]odo(?:\\s+de)?|compet[eê]ncia(?:s)?)\\s*[:\\-]?\\s*' + mesAno + '\\s*' + separador + '\\s*' + mesAno, 'i'),
+                new RegExp('(?:data\\s+)?inicial\\s*[:\\-]?\\s*' + data + '\\s*(?:até|ate|a|[-–—])\\s*(?:data\\s+)?final\\s*[:\\-]?\\s*' + data, 'i')
+            ];
+            for (const padrao of padroesPeriodo) {
+                const m = textoPeriodo.match(padrao);
+                if (m) { objDadosPDF.periodoInicial = m[1]; objDadosPDF.periodoFinal = m[2]; break; }
+            }
+
+            // Último fallback: procura uma faixa de datas na primeira página.
+            if (!objDadosPDF.periodoInicial) {
+                const m = textoPagina.match(new RegExp(data + '\\s*' + separador + '\\s*' + data));
+                if (m) { objDadosPDF.periodoInicial = m[1]; objDadosPDF.periodoFinal = m[2]; }
+            }
+        }
+
+        async function processPDF() {
+            if (!uploadedFile) return;
+            document.getElementById('statusInfo').innerHTML = `<span style="color: #ed8936;">⏳ Lendo arquivo (aguarde)...</span>`;
+
+            try {
+                const arrayBuffer = await uploadedFile.arrayBuffer();
+                const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+
+                objDadosPDF = { nome: "", nbs: [], rubricasUnicas: {}, todasRubricasReal: [], competenciasEncontradas: [], periodoInicial: "", periodoFinal: "", dataEmissao: "" };
+                let currentCompetencia = "Não localizada";
+                let currentStatus = "Não localizado";
+
+                for (let i = 1; i <= pdf.numPages; i++) {
+                    const page = await pdf.getPage(i);
+                    const textContent = await page.getTextContent();
+
+                    let items = textContent.items.map(item => ({
+                        str: item.str,
+                        y: Math.round(item.transform[5]),
+                        x: Math.round(item.transform[4])
+                    }));
+
+                    items.sort((a, b) => {
+                        if (Math.abs(b.y - a.y) > 4) return b.y - a.y;
+                        return a.x - b.x;
+                    });
+
+                    let lines = [];
+                    let currentLine = [];
+                    let lastY = null;
+                    items.forEach(item => {
+                        if (lastY === null) lastY = item.y;
+                        if (Math.abs(item.y - lastY) > 4) {
+                            lines.push(currentLine.join(' '));
+                            currentLine = [];
+                            lastY = item.y;
+                        }
+                        currentLine.push(item.str.trim());
+                    });
+                    if (currentLine.length > 0) lines.push(currentLine.join(' '));
+                    lines = lines.map(l => l.replace(/\s+/g, ' ').trim()).filter(Boolean);
+
+                    if (i === 1) extrairInformacoesGeraisPrimeiraPagina(lines);
+
+                    lines.forEach(linha => {
+                        let matchNome = linha.match(/Nome:\s*([A-Z\s\.\-ÇÃÁÉÍÓÚÂÊÔ]+)/i);
+                        if(matchNome && !objDadosPDF.nome) objDadosPDF.nome = matchNome[1].trim();
+
+                        let matchNB = linha.match(/NB:\s*([\d\.\-]+)/i);
+                        if(matchNB) objDadosPDF.nbs.push(matchNB[1].trim());
+
+                        let matchComp = linha.match(/^(\d{2}\/\d{4})/);
+                        if(matchComp && !/^\d{3}\s/.test(linha)) currentCompetencia = matchComp[1];
+
+                        if(linha.includes("Não Pago")) currentStatus = "Não Pago";
+                        else if(linha.includes("Pago") && !linha.includes("Não Pago")) currentStatus = "Pago";
+
+                        let matchRubrica = linha.match(/^(\d{3})\s+([A-Z0-9\s\.\-ÇÃÁÉÍÓÚÂÊÔ\/]+?)\s+R\$?\s*([\d\.,]+)/i);
+                        if(matchRubrica){
+                            let codigo = matchRubrica[1];
+                            let descricaoDoc = matchRubrica[2].trim();
+                            let valorBruto = matchRubrica[3];
+                            let valorNumero = parseValorMonetario(valorBruto);
+                            let valorDoc = formatarMoedaBR(valorNumero);
+
+                            if (objDadosPDF.rubricasUnicas[codigo]) objDadosPDF.rubricasUnicas[codigo].ocorrencias++;
+                            else objDadosPDF.rubricasUnicas[codigo] = { descricao_doc: descricaoDoc, descricao_ref: descricoesRubricas[codigo] || "Não encontrada na referência", ocorrencias: 1 };
+
+                            objDadosPDF.todasRubricasReal.push({ pagina: i, competencia: currentCompetencia, rubrica: codigo, descricao: descricaoDoc, valor: valorDoc, valorNumero: valorNumero, valorBruto: valorBruto, status: currentStatus });
+                        }
+                    });
+                }
+
+                // O período do documento é determinado pelas competências efetivamente
+                // encontradas nos registros extraídos, e não pela data de emissão.
+                const competenciasEncontradas = [...new Set(
+                    objDadosPDF.todasRubricasReal
+                        .map(d => d.competencia)
+                        .filter(c => /^\d{2}\/\d{4}$/.test(c))
+                )].sort((a, b) => {
+                    const [ma, aa] = a.split('/').map(Number);
+                    const [mb, ab] = b.split('/').map(Number);
+                    return (aa * 12 + ma) - (ab * 12 + mb);
+                });
+
+                objDadosPDF.competenciasEncontradas = competenciasEncontradas;
+                if (competenciasEncontradas.length > 0) {
+                    objDadosPDF.periodoInicial = competenciasEncontradas[0];
+                    objDadosPDF.periodoFinal = competenciasEncontradas[competenciasEncontradas.length - 1];
+                } else {
+                    objDadosPDF.periodoInicial = '';
+                    objDadosPDF.periodoFinal = '';
+                }
+
+                objDadosPDF.nbs = [...new Set(objDadosPDF.nbs)];
+                if (objDadosPDF.nome) document.getElementById('nomeAutor').value = objDadosPDF.nome;
+
+                document.getElementById('statusInfo').innerHTML = `
+                    <span style="color: #38b2ac;">✓ Leitura concluída automaticamente</span><br>
+                    <small>${Object.keys(objDadosPDF.rubricasUnicas).length} rubricas únicas identificadas</small>`;
+
+                showAnaliseResults();
+                prepararTelaBuscador();
+                mostrarModalBeneficiario();
+
+            } catch (error) {
+                document.getElementById('statusInfo').innerHTML = `<span style="color:#e53e3e;">✕ Erro na leitura do documento</span>`;
+                alert('Erro crítico ao processar o PDF. Verifique se o arquivo não está corrompido ou protegido.');
+                console.error(error);
+            }
+        }
+
+        // ============================================================
+        // CRUZAMENTO HISCONSIG x HISCRE POR CONTRATO E VALOR
+        // ============================================================
+        let contratosHiscns = [];
+        let pdfHiscnsCarregado = null;
+        let pdfHiscreConsigCarregado = null;
+        let rubricasHiscreConsig = [];
+        let nomesDocumentosConsig = { hiscns: '', hiscre: '' };
+        let identidadeConfirmadaManualmente = false;
+
+        function mesIndice(mmYYYY) {
+            const m = String(mmYYYY || '').match(/^(\d{2})\/(\d{4})$/);
+            return m ? Number(m[2]) * 12 + Number(m[1]) : null;
+        }
+        function textoItensPDF(items) {
+            return items.map(it => ({ t: String(it.str || '').trim(), x: it.transform ? it.transform[4] : 0, y: it.transform ? it.transform[5] : 0 })).filter(it => it.t);
+        }
+        async function obterPaginasPDF(file) {
+            const pdf = await pdfjsLib.getDocument({ data: await file.arrayBuffer() }).promise;
+            const paginas = [];
+            for (let n=1; n<=pdf.numPages; n++) {
+                const page = await pdf.getPage(n);
+                const tc = await page.getTextContent();
+                paginas.push(textoItensPDF(tc.items));
+            }
+            return paginas;
+        }
+        function normalizarContrato(v) { return String(v || '').replace(/\D/g, ''); }
+        function extrairContratosHiscns(paginas) {
+            const encontrados = [];
+            for (const items of paginas) {
+                // No HISCONSIG do INSS, cada contrato ocupa uma coluna da tabela.
+                // Os três blocos de seis dígitos ficam na mesma coordenada X aproximada.
+                const tokens = items.filter(it => /^\d{6}$/.test(it.t));
+                for (const token of tokens) {
+                    const x0 = token.x;
+                    const coluna = items.filter(it => it.x >= x0 - 1 && it.x <= x0 + 38).sort((a,b)=>b.y-a.y || a.x-b.x);
+                    const seq = coluna.map(it=>it.t);
+                    const pos = seq.indexOf(token.t);
+                    if (pos < 0) continue;
+                    const partes = seq.slice(pos, pos+3).filter(t=>/^\d{6}$/.test(t));
+                    if (partes.length !== 3) continue;
+                    const numero = partes.join('');
+                    if (encontrados.some(c=>c.numero===numero)) continue;
+                    const datas = coluna.map(it=>it.t).join(' ').match(/(\d{2}\/\d{4})/g) || [];
+                    const valores = coluna.map(it=>it.t).join(' ').match(/R\$\s*[\d.]+,[\d]{2}/g) || [];
+                    // Na tabela do extrato, as datas de início/fim e o valor da parcela
+                    // estão alinhados na coluna do contrato. O primeiro valor monetário é a parcela.
+                    // O PDF do HISCONSIG apresenta as células monetárias e as competências
+                    // em ordem vertical invertida na extração do PDF.js. Na coluna
+                    // do contrato, o último valor monetário é PARCELA (antes de
+                    // EMPRESTADO e LIBERADO); a última data é o início.
+                    const inicio = datas[datas.length - 1] || '';
+                    const fim = datas[0] || '';
+                    const parcela = valores.length ? parseValorMonetario(valores[valores.length - 1]) : NaN;
+                    if (inicio && fim && Number.isFinite(parcela)) encontrados.push({numero, inicio, fim, parcela, parcelas: (coluna.map(it=>it.t).join(' ').match(/\b\d{1,3}\b/g)||[]).map(Number).find(n=>n>=1&&n<=120)||null});
+                }
+            }
+            return encontrados;
+        }
+        function extrairRubricas216(paginas) {
+            const regs=[];
+            // A competência pode começar no rodapé de uma página e suas rubricas
+            // continuarem no topo da página seguinte. Por isso, o contexto da
+            // competência precisa ser mantido entre páginas consecutivas.
+            let competenciaAtual='';
+            let statusAtual='';
+            paginas.forEach((items,idx)=>{
+                const linhas=[]; let atual=[], y=null;
+                // Primeiro ordenar globalmente por linha (coordenada Y) e só depois
+                // agrupar os fragmentos da mesma linha por proximidade vertical.
+                // O comparador anterior misturava linhas próximas e podia separar
+                // o código 216 da descrição/valor correspondentes.
+                [...items].sort((a,b)=>b.y-a.y || a.x-b.x).forEach(it=>{
+                    if(y!==null && Math.abs(it.y-y)>3){
+                        linhas.push(atual.join(' ').replace(/\s+/g,' ').trim());
+                        atual=[];
+                    }
+                    atual.push(it.t); y=it.y;
+                });
+                if(atual.length) linhas.push(atual.join(' ').replace(/\s+/g,' ').trim());
+                for(let i=0;i<linhas.length;i++){
+                    const l=linhas[i];
+                    const mc=l.match(/^(\d{2}\/\d{4})\b/); if(mc) competenciaAtual=mc[1];
+                    if(/Não Pago/i.test(l)) statusAtual='Não Pago'; else if(/\bPago\b/i.test(l)) statusAtual='Pago';
+                    const codigo=l.match(/^216\b/);
+                    if(!codigo || !competenciaAtual) continue;
+                    let descricao=l.replace(/^216\s*/,'').trim();
+                    let valor=NaN;
+                    // Primeiro, procurar o valor na própria linha da rubrica.
+                    // Evita capturar o valor líquido do benefício seguinte quando
+                    // a segunda rubrica 216 já contém seu valor na mesma linha.
+                    const valorNaPropriaLinha=l.match(/R\$?\s*([\d.]+,[\d]{2})/);
+                    if(valorNaPropriaLinha) valor=parseValorMonetario(valorNaPropriaLinha[1]);
+                    // Fallback para PDFs que separam código, descrição e valor.
+                    if(!Number.isFinite(valor)){
+                        for(let j=i+1;j<Math.min(i+5,linhas.length);j++){
+                            if(/^\d{3}\b/.test(linhas[j])) break;
+                            if(!descricao && linhas[j] && !/R\$/.test(linhas[j])) descricao=linhas[j];
+                            const mv=linhas[j].match(/R\$?\s*([\d.]+,[\d]{2})/);
+                            if(mv){valor=parseValorMonetario(mv[1]);break;}
+                        }
+                    }
+                    if(Number.isFinite(valor)) regs.push({pagina:idx+1,competencia:competenciaAtual,valor:Math.round(valor*100)/100,descricao:descricao||'CONSIGNAÇÃO EMPRÉSTIMO BANCÁRIO',status:statusAtual||'Não identificado'});
+                }
+            });
+            return regs;
+        }
+        function normalizarNomeParte(nome){
+            return String(nome||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().replace(/[^A-Z ]/g,' ').replace(/\s+/g,' ').trim();
+        }
+        function extrairNomeDocumento(paginas, origem){
+            for(const items of paginas.slice(0,3)){
+                const linhas=[]; let atual=[], y=null;
+                [...items].sort((a,b)=>b.y-a.y||a.x-b.x).forEach(it=>{
+                    if(y!==null&&Math.abs(it.y-y)>3){linhas.push(atual.join(' ').replace(/\s+/g,' ').trim());atual=[];}
+                    atual.push(it.t);y=it.y;
+                });
+                if(atual.length)linhas.push(atual.join(' ').replace(/\s+/g,' ').trim());
+                const texto=linhas.join('\n');
+                const padroes=origem==='HISCRE' ? [/(?:Nome\s*:\s*)([A-ZÀ-Ú][A-ZÀ-Ú '\-]{4,})/i] : [/(?:HISTÓRICO DE\s+EMPRÉSTIMO CONSIGNADO\s*)([A-ZÀ-Ú][A-ZÀ-Ú '\-]{4,})/i,/(?:Nome\s+do\s+titular\s*:?\s*)([A-ZÀ-Ú][A-ZÀ-Ú '\-]{4,})/i];
+                for(const re of padroes){const m=texto.match(re);if(m){const nome=m[1].split(/\n|\s{2,}|Benef[ií]cio|NIT|CPF/i)[0].trim().replace(/\s+/g,' ');if(nome.length>=6)return nome;}}
+            }
+            return '';
+        }
+        function renderizarConferenciaIdentidade(){
+            const el=document.getElementById('identidadeDocumentos');
+            const a=nomesDocumentosConsig.hiscns,b=nomesDocumentosConsig.hiscre;
+            const na=normalizarNomeParte(a),nb=normalizarNomeParte(b);
+            const ambos=!!(na&&nb), compativel=ambos&&na===nb;
+            let classe=compativel?'ok':'', aviso=compativel?'Os nomes extraídos coincidem. A conferência de identidade não apontou divergência.':'';
+            if(ambos&&!compativel){classe='';aviso='ATENÇÃO: os nomes identificados no HISCONSIG e no HISCRE são diferentes. O cruzamento ficará bloqueado para evitar associação de documentos de pessoas distintas.';}
+            else if(!ambos){aviso='Não foi possível confirmar automaticamente a identidade pelos dois documentos. Confira os nomes antes de cruzar os contratos.';}
+            el.style.display='block';
+            el.innerHTML=`<div class="consig-identidade"><div class="consig-identidade-card ${a?'match':'pending'}"><div class="eyebrow">Titular identificado no HISCONSIG</div><div class="nome">${a||'Nome não localizado'}</div><div class="arquivo">Extrato de empréstimo consignado</div></div><div class="consig-identidade-card ${b?'match':'pending'}"><div class="eyebrow">Titular identificado no HISCRE</div><div class="nome">${b||'Nome não localizado'}</div><div class="arquivo">Histórico de créditos</div></div></div><div class="consig-alerta-identidade ${classe}"><strong>${compativel?'Identidade compatível': 'Conferência de identidade necessária'}</strong><br>${aviso}${!compativel?`<label><input type="checkbox" id="confirmarIdentidadeManual" onchange="identidadeConfirmadaManualmente=this.checked" style="width:auto;margin-top:3px"> Conferi os documentos e confirmo que pertencem à mesma pessoa, apesar da divergência ou ausência de identificação automática.</label>`:''}</div>`;
+            identidadeConfirmadaManualmente=compativel;
+        }
+
+        async function lerDocumentosConsignado(){
+            const a=document.getElementById('hiscnsInput').files[0];
+            const b=document.getElementById('hiscreConsigInput').files[0];
+            const st=document.getElementById('consigStatus');
+            if(!a||!b){st.textContent='Selecione os dois PDFs antes de iniciar.';return;}
+            st.textContent='Lendo HISCONSIG e HISCRE...';
+            try{
+                const [pa,pb]=await Promise.all([obterPaginasPDF(a),obterPaginasPDF(b)]);
+                contratosHiscns=extrairContratosHiscns(pa);
+                rubricasHiscreConsig=extrairRubricas216(pb);
+                nomesDocumentosConsig.hiscns=extrairNomeDocumento(pa,'HISCONSIG');
+                nomesDocumentosConsig.hiscre=extrairNomeDocumento(pb,'HISCRE');
+                renderizarConferenciaIdentidade();
+                document.getElementById('listaContratosSelecao').innerHTML=contratosHiscns.map((c,i)=>`<label style="display:flex;align-items:flex-start;gap:9px;padding:10px;border:1px solid #dbe3ec;border-radius:6px;background:#fff;font-weight:400;cursor:pointer"><input type="checkbox" class="contrato-selecao" value="${c.numero}" style="width:auto;margin-top:3px"><span><strong>${c.numero}</strong><br><small>Parcela: ${formatarMoedaBR(c.parcela)} | ${c.inicio} a ${c.fim}</small></span></label>`).join('');
+                document.getElementById('contratosPainel').style.display='block';
+                st.textContent=`Leitura concluída: ${contratosHiscns.length} contratos e ${rubricasHiscreConsig.length} lançamentos da rubrica 216 encontrados no HISCRE.`;
+                if(!contratosHiscns.length) st.textContent+=' Não foi possível reconhecer os contratos automaticamente neste leiaute.';
+            }catch(e){console.error(e);st.textContent='Falha na leitura dos PDFs. Verifique se os arquivos estão íntegros.';}
+        }
+        function classificarTrechoDecisao(trecho) {
+            const t=trecho.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+            const favoraveis=[/pedido[s]?\s+(?:e|foi\s+)?procedente/,/julgo\s+procedente/,/condeno/,/determino\s+(?:o\s+)?restabelecimento/,/reconheco\s+(?:o\s+)?direito/,/declaro\s+(?:a\s+)?inexigibilidade/,/contrato[s]?\s+nul[oa]/,/descontos?\s+indevid/];
+            const desfavoraveis=[/pedido[s]?\s+(?:e|foi\s+)?improcedente/,/julgo\s+improcedente/,/julgo\s+improcedente/,/nego\s+provimento/,/indefiro/,/rejeito/,/regularidade\s+(?:do|dos)\s+contrato/,/contratacao\s+regular/,/ausencia\s+de\s+irregularidade/];
+            const f=favoraveis.some(r=>r.test(t)), d=desfavoraveis.some(r=>r.test(t));
+            if(/parcialmente\s+procedente/.test(t)) return 'Parcialmente favorável';
+            if(f&&d) return 'Inconclusivo';
+            if(f) return 'Favorável';
+            if(d) return 'Desfavorável';
+            return 'Inconclusivo';
+        }
+        async function analisarDecisaoContratos(){
+            const file=document.getElementById('decisaoInput').files[0];
+            const status=document.getElementById('decisaoStatus');
+            const out=document.getElementById('decisaoResultados');
+            if(!file){status.textContent='Selecione a decisão judicial em PDF.';return;}
+            if(!contratosHiscns.length){status.textContent='Leia primeiro o HISCONSIG e o HISCRE para comparar os contratos reconhecidos na decisão.';return;}
+            status.textContent='Lendo decisão e identificando contratos e fundamentos...';out.innerHTML='';
+            try{
+                const paginas=await obterPaginasPDF(file);
+                const numeros=contratosHiscns.map(c=>c.numero);
+                const achados=[];
+                paginas.forEach((items,idx)=>{
+                    const texto=items.slice().sort((a,b)=>b.y-a.y||a.x-b.x).map(i=>i.t).join(' ').replace(/\s+/g,' ');
+                    numeros.forEach(numero=>{
+                        // Aceita o número contínuo ou com pontos, barras, hífens e espaços entre dígitos.
+                        const padrao=new RegExp(numero.split('').join('[\\s./-]*'),'g');
+                        let m;
+                        while((m=padrao.exec(texto))!==null){
+                            const pos=m.index;
+                            const trecho=texto.slice(Math.max(0,pos-420),Math.min(texto.length,pos+m[0].length+520));
+                            achados.push({numero,pagina:idx+1,trecho,classe:classificarTrechoDecisao(trecho)});
+                            if(!m[0].length) padrao.lastIndex++;
+                        }
+                    });
+                });
+                window.resultadoLeituraDecisao=achados;
+                if(!achados.length){
+                    out.innerHTML='<div class="warning-box">Nenhum número de contrato do HISCONSIG foi localizado no texto extraível da decisão. Se o PDF for digitalizado, será necessário OCR; também confira se os números aparecem com máscara ou parcialmente.</div>';
+                    status.textContent=`Decisão lida: ${paginas.length} páginas.`;return;
+                }
+                const porContrato=numeros.map(n=>({numero:n,itens:achados.filter(a=>a.numero===n)})).filter(x=>x.itens.length);
+                const cards=porContrato.map(c=>{
+                    const classes=[...new Set(c.itens.map(i=>i.classe))];
+                    const principal=classes.length===1?classes[0]:'Contextos divergentes';
+                    const cls=principal==='Favorável'||principal==='Parcialmente favorável'?'#e6fffa':principal==='Desfavorável'?'#fff5f5':'#fffaf0';
+                    return `<div style="border:1px solid #dbe3ec;border-radius:7px;padding:12px;margin:8px 0;background:${cls}"><div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap"><strong>Contrato ${c.numero}</strong><strong>${principal}</strong><button class="btn btn-success" style="width:auto;padding:7px 12px" onclick="sugerirContratoDecisao('${c.numero}')">Selecionar para cruzamento</button></div>${c.itens.map(i=>`<div style="margin-top:9px;font-size:13px"><strong>Página ${i.pagina} — ${i.classe}</strong><p style="margin:4px 0;line-height:1.5">…${i.trecho.replace(/</g,'&lt;').replace(/>/g,'&gt;')}…</p></div>`).join('')}</div>`;
+                }).join('');
+                out.innerHTML=`<div class="info-box"><strong>Contratos encontrados:</strong> ${porContrato.length}. A classificação considera expressões próximas à referência do contrato; não substitui a leitura integral do dispositivo e da fundamentação.</div>${cards}`;
+                status.textContent=`Análise concluída: ${paginas.length} páginas examinadas; ${achados.length} ocorrências de números de contratos.`;
+            }catch(e){console.error(e);status.textContent='Não foi possível ler a decisão. Verifique se o PDF está íntegro ou protegido.';}
+        }
+        function sugerirContratoDecisao(numero){
+            const el=[...document.querySelectorAll('.contrato-selecao')].find(x=>normalizarContrato(x.value)===numero);
+            if(el){el.checked=true;document.getElementById('contratosPainel').scrollIntoView({behavior:'smooth',block:'center'});}
+        }
+        let resultadoContratosAtual = [];
+        function cruzarContratosSelecionados(){
+            const nomeA=normalizarNomeParte(nomesDocumentosConsig.hiscns), nomeB=normalizarNomeParte(nomesDocumentosConsig.hiscre);
+            const identidadeOk=!!(nomeA&&nomeB&&nomeA===nomeB)||identidadeConfirmadaManualmente;
+            if(!identidadeOk){document.getElementById('contratoResumo').innerHTML='<div class="consig-alerta-identidade">Confirme que o HISCONSIG e o HISCRE pertencem à mesma pessoa antes de realizar o cruzamento.</div>';document.getElementById('contratoResultados').innerHTML='';document.getElementById('relatorioContratoAcoes').style.display='none';return;}
+            const numeros=[...document.querySelectorAll('.contrato-selecao:checked')].map(el=>normalizarContrato(el.value));
+            const resumo=document.getElementById('contratoResumo'), out=document.getElementById('contratoResultados');
+            if(!numeros.length){resumo.innerHTML='<div class="warning-box">Selecione pelo menos um contrato.</div>';out.innerHTML='';resultadoContratosAtual=[];document.getElementById('relatorioContratoAcoes').style.display='none';return;}
+            resultadoContratosAtual=numeros.map(numero=>contratosHiscns.find(c=>c.numero===numero)).filter(Boolean).map(c=>{
+                const ini=mesIndice(c.inicio), fim=mesIndice(c.fim);
+                const candidatos=rubricasHiscreConsig.filter(r=>{const m=mesIndice(r.competencia);return m!==null&&m>=ini&&m<=fim;});
+                const encontrados=candidatos.filter(r=>Math.round(r.valor*100)===Math.round(c.parcela*100));
+                return {...c,candidatos,encontrados};
+            });
+            const cards=resultadoContratosAtual.map(c=>`<div class="consig-contract-card"><div class="contract-number">Contrato ${c.numero}</div><div class="metric"><span>Parcela mensal</span><strong>${formatarMoedaBR(c.parcela)}</strong></div><div class="metric"><span>Período</span><strong>${c.inicio} a ${c.fim}</strong></div><div class="metric"><span>Rubrica 216 no período</span><strong>${c.candidatos.length}</strong></div><div class="metric"><span>Correspondências exatas</span><strong>${c.encontrados.length}</strong></div></div>`).join('');
+            resumo.innerHTML=`<div class="consig-result-header"><div><h3>Resultado do cruzamento</h3><p>Titular: ${nomesDocumentosConsig.hiscns||nomesDocumentosConsig.hiscre||'não identificado'}</p></div></div><div class="consig-contract-cards">${cards}</div>`;
+            renderizarMatrizContratos();
+        }
+        function renderizarMatrizContratos(){
+            const out=document.getElementById('contratoResultados');
+            if(!resultadoContratosAtual.length){out.innerHTML='';return;}
+            const somar=document.getElementById('somarContratos').checked;
+            const competencias=[...new Set(resultadoContratosAtual.flatMap(c=>c.encontrados.map(r=>r.competencia)))].sort((a,b)=>mesIndice(a)-mesIndice(b));
+            if(!competencias.length){
+                out.innerHTML='<div class="warning-box">Nenhuma correspondência exata foi encontrada nos contratos selecionados. Confira os períodos e os valores das parcelas nos resumos acima.</div>';
+                document.getElementById('relatorioContratoAcoes').style.display='block';
+                return;
+            }
+            const porContrato=resultadoContratosAtual.map(c=>{
+                const mapa={}; c.encontrados.forEach(r=>{(mapa[r.competencia]??=[]).push(r);}); return mapa;
+            });
+            const totais=resultadoContratosAtual.map((c,i)=>c.encontrados.reduce((s,r)=>s+r.valor,0));
+            const linhas=competencias.map(comp=>{
+                const valores=porContrato.map(m=>m[comp]||[]);
+                const celulas=valores.map(lista=>`<td>${lista.length?lista.map(r=>`${formatarMoedaBR(r.valor)} <small style="color:#718096">(p. ${r.pagina})</small>`).join('<br>'):'—'}</td>`).join('');
+                const total=valores.reduce((s,lista)=>s+lista.reduce((a,r)=>a+r.valor,0),0);
+                return `<tr><td><strong>${comp}</strong></td>${celulas}${somar?`<td><strong>${formatarMoedaBR(total)}</strong></td>`:''}</tr>`;
+            }).join('');
+            const totaisHtml=totais.map(v=>`<td><strong>${formatarMoedaBR(v)}</strong></td>`).join('');
+            const totalGeral=totais.reduce((a,b)=>a+b,0);
+            const semCorrespondencia=resultadoContratosAtual.filter(c=>!c.encontrados.length);
+            const manual=semCorrespondencia.map(c=>c.candidatos.map(r=>`<tr><td>${c.numero}</td><td>${r.pagina}</td><td>${r.competencia}</td><td>${formatarMoedaBR(r.valor)}</td><td>${formatarMoedaBR(r.valor-c.parcela)}</td></tr>`).join('')).join('');
+            const manualHtml=semCorrespondencia.length?`<div class="warning-box" style="margin-top:18px"><strong>Conferência manual</strong><br>Os contratos abaixo não tiveram correspondência exata. Os lançamentos da rubrica 216 dentro do período são listados sem atribuição automática.</div><div style="overflow-x:auto"><table class="data-table"><thead><tr><th>Contrato</th><th>Página</th><th>Competência</th><th>Valor HISCRE</th><th>Diferença para parcela</th></tr></thead><tbody>${manual||'<tr><td colspan="5">Nenhum lançamento da rubrica 216 no período.</td></tr>'}</tbody></table></div>`:'';
+            out.innerHTML=`<div class="consig-result-header"><div><h3>Parcelas localizadas por competência</h3><p>${competencias.length} competências com correspondência exata • páginas de origem indicadas em cada lançamento</p></div><button type="button" class="btn consig-copy-btn" onclick="copiarMatrizContratosExcel()">⧉ Copiar tabela para Excel</button></div><div class="consig-table-wrap"><table class="consig-matrix"><thead><tr><th>Competência</th>${resultadoContratosAtual.map(c=>`<th>${c.numero}<br><small>Parcela ${formatarMoedaBR(c.parcela)}</small></th>`).join('')}${somar?'<th>Total por competência</th>':''}</tr></thead><tbody>${linhas}<tr><td>Total no período</td>${totaisHtml}${somar?`<td>${formatarMoedaBR(totalGeral)}</td>`:''}</tr></tbody></table></div>${manualHtml}`;
+            document.getElementById('relatorioContratoAcoes').style.display='block';
+        }
+        async function copiarMatrizContratosExcel(){
+            if(!resultadoContratosAtual.length)return;
+            const competencias=[...new Set(resultadoContratosAtual.flatMap(c=>c.encontrados.map(r=>r.competencia)))].sort((a,b)=>mesIndice(a)-mesIndice(b));
+            const somar=document.getElementById('somarContratos').checked;
+            const fmt=v=>Number(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+            const linhas=[['Competência',...resultadoContratosAtual.map(c=>`${c.numero} — Parcela ${fmt(c.parcela)}`),...(somar?['Total por competência']:[])]];
+            competencias.forEach(comp=>{
+                const valores=resultadoContratosAtual.map(c=>c.encontrados.filter(r=>r.competencia===comp).reduce((s,r)=>s+r.valor,0));
+                const linha=[comp,...valores.map(v=>v?fmt(v):'')];
+                if(somar)linha.push(fmt(valores.reduce((a,b)=>a+b,0)));
+                linhas.push(linha);
+            });
+            const totais=resultadoContratosAtual.map(c=>c.encontrados.reduce((s,r)=>s+r.valor,0));
+            const ultima=['TOTAL DO PERÍODO',...totais.map(fmt)];
+            if(somar)ultima.push(fmt(totais.reduce((a,b)=>a+b,0)));
+            linhas.push(ultima);
+
+            const escapeHtml=v=>String(v??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+            const html='<table border="1" cellpadding="4" cellspacing="0"><tbody>'+linhas.map((linha,i)=>'<tr>'+linha.map(c=>i===0?`<th>${escapeHtml(c)}</th>`:`<td>${escapeHtml(c)}</td>`).join('')+'</tr>').join('')+'</tbody></table>';
+            const tsv=linhas.map(l=>l.join('\t')).join('\r\n');
+            let copiado=false;
+            try{
+                if(navigator.clipboard && window.ClipboardItem){
+                    const item=new ClipboardItem({
+                        'text/html':new Blob([html],{type:'text/html'}),
+                        'text/plain':new Blob([tsv],{type:'text/plain'})
+                    });
+                    await navigator.clipboard.write([item]);
+                    copiado=true;
+                }
+            }catch(e){ /* tenta o método compatível com Excel abaixo */ }
+            if(!copiado){
+                const area=document.createElement('div');
+                area.contentEditable='true';
+                area.style.cssText='position:fixed;left:-10000px;top:0;background:#fff;';
+                area.innerHTML=html;
+                document.body.appendChild(area);
+                const range=document.createRange();range.selectNodeContents(area);
+                const selection=window.getSelection();selection.removeAllRanges();selection.addRange(range);
+                try{copiado=document.execCommand('copy');}catch(e){copiado=false;}
+                selection.removeAllRanges();area.remove();
+            }
+            const btn=document.querySelector('#contratoResultados .consig-copy-btn');
+            if(btn){const old=btn.textContent;btn.textContent=copiado?'✓ Tabela copiada para Excel':'Não foi possível copiar';setTimeout(()=>btn.textContent=old,2200);}
+            if(!copiado)alert('Não foi possível copiar automaticamente. Tente abrir o arquivo no Chrome/Edge e autorizar o acesso à área de transferência.');
+        }
+
+        function gerarPDFRelatorioContratos(){
+            if(!resultadoContratosAtual.length){alert('Realize primeiro o cruzamento de pelo menos um contrato.');return;}
+            if(!window.jspdf||!window.jspdf.jsPDF){alert('A biblioteca de geração de PDF não foi carregada. Verifique sua conexão com a internet e tente novamente.');return;}
+            const {jsPDF}=window.jspdf;
+            const doc=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
+            const margem=14, largura=doc.internal.pageSize.getWidth();
+            const dataHora=new Date().toLocaleString('pt-BR');
+            const titular=nomesDocumentosConsig.hiscns||nomesDocumentosConsig.hiscre||'Não identificado';
+            const observacoes=(document.getElementById('observacoesRelatorioContratos')?.value||'').trim();
+            const nomeHiscns=nomesDocumentosConsig.hiscns||'Não identificado';
+            const nomeHiscre=nomesDocumentosConsig.hiscre||'Não identificado';
+            const identidade=normalizarNomeParte(nomesDocumentosConsig.hiscns)&&normalizarNomeParte(nomesDocumentosConsig.hiscre)
+                ?(normalizarNomeParte(nomesDocumentosConsig.hiscns)===normalizarNomeParte(nomesDocumentosConsig.hiscre)?'Compatível':'Divergente')
+                :(identidadeConfirmadaManualmente?'Confirmada manualmente':'Não confirmada');
+            doc.setFillColor(30,58,95);doc.rect(0,0,largura,27,'F');
+            doc.setTextColor(255,255,255);doc.setFont('helvetica','bold');doc.setFontSize(17);doc.text('CONSIG-JUS | RELATÓRIO DE CRUZAMENTO',margem,12);
+            doc.setFont('helvetica','normal');doc.setFontSize(9);doc.text('HISCONSIG × HISCRE',margem,20);
+            let y=36;doc.setTextColor(35,45,58);doc.setFontSize(10);
+            doc.setFont('helvetica','bold');doc.text('Titular identificado',margem,y);doc.setFont('helvetica','normal');doc.text(String(titular),margem+39,y);y+=6;
+            doc.setFont('helvetica','bold');doc.text('Nome no HISCONSIG',margem,y);doc.setFont('helvetica','normal');doc.text(String(nomeHiscns),margem+39,y);y+=6;
+            doc.setFont('helvetica','bold');doc.text('Nome no HISCRE',margem,y);doc.setFont('helvetica','normal');doc.text(String(nomeHiscre),margem+39,y);y+=6;
+            doc.setFont('helvetica','bold');doc.text('Conferência de identidade',margem,y);doc.setFont('helvetica','normal');doc.text(identidade,margem+48,y);y+=6;
+            doc.setFont('helvetica','bold');doc.text('Emitido em',margem,y);doc.setFont('helvetica','normal');doc.text(dataHora,margem+22,y);y+=9;
+            doc.setFont('helvetica','bold');doc.setFontSize(11);doc.text('Contratos incluídos',margem,y);y+=3;
+            const contratosBody=resultadoContratosAtual.map(c=>[c.numero,formatarMoedaBR(c.parcela),`${c.inicio} a ${c.fim}`,String(c.candidatos.length),String(c.encontrados.length)]);
+            doc.autoTable({startY:y,head:[['Número do contrato','Parcela','Período','Rubrica 216 no período','Correspondências exatas']],body:contratosBody,theme:'grid',styles:{fontSize:8,cellPadding:2.5,textColor:[45,55,72]},headStyles:{fillColor:[44,82,130],textColor:255},margin:{left:margem,right:margem}});
+            y=doc.lastAutoTable.finalY+9;
+            const competencias=[...new Set(resultadoContratosAtual.flatMap(c=>c.encontrados.map(r=>r.competencia)))].sort((a,b)=>mesIndice(a)-mesIndice(b));
+            const somar=document.getElementById('somarContratos')?.checked;
+            const head=['Competência',...resultadoContratosAtual.map(c=>c.numero),...(somar?['Total']:[])];
+            const body=competencias.map(comp=>{
+                const vals=resultadoContratosAtual.map(c=>c.encontrados.filter(r=>r.competencia===comp));
+                const row=[comp,...vals.map(lista=>lista.length?lista.map(r=>`${formatarMoedaBR(r.valor)} (p. ${r.pagina})`).join('\n'):'—')];
+                if(somar)row.push(formatarMoedaBR(vals.reduce((s,lista)=>s+lista.reduce((a,r)=>a+r.valor,0),0)));
+                return row;
+            });
+            const totais=resultadoContratosAtual.map(c=>c.encontrados.reduce((s,r)=>s+r.valor,0));
+            const totalRow=['TOTAL',...totais.map(formatarMoedaBR)];if(somar)totalRow.push(formatarMoedaBR(totais.reduce((a,b)=>a+b,0)));body.push(totalRow);
+            if(y>doc.internal.pageSize.getHeight()-35){doc.addPage();y=18;}
+            doc.setFont('helvetica','bold');doc.setFontSize(11);doc.text('Lançamentos por competência',margem,y);y+=3;
+            doc.autoTable({startY:y,head:[head],body,theme:'grid',styles:{fontSize:7.5,cellPadding:2.1,overflow:'linebreak',textColor:[45,55,72]},headStyles:{fillColor:[30,58,95],textColor:255},alternateRowStyles:{fillColor:[246,249,252]},columnStyles:{0:{cellWidth:25}},margin:{left:margem,right:margem}});
+            y=doc.lastAutoTable.finalY+9;
+            if(observacoes){
+                if(y>doc.internal.pageSize.getHeight()-28){doc.addPage();y=18;}
+                doc.setFont('helvetica','bold');doc.setFontSize(10);doc.text('Observações / identificação do documento',margem,y);y+=5;
+                doc.setFont('helvetica','normal');doc.setFontSize(9);
+                const linhasObs=doc.splitTextToSize(observacoes,largura-2*margem);
+                linhasObs.forEach(linha=>{if(y>doc.internal.pageSize.getHeight()-15){doc.addPage();y=18;}doc.text(linha,margem,y);y+=4.5;});
+            }
+            const paginas=doc.getNumberOfPages();
+            for(let i=1;i<=paginas;i++){doc.setPage(i);doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(110,120,130);doc.text(`Consig-Jus • Página ${i} de ${paginas}`,largura-margem,doc.internal.pageSize.getHeight()-7,{align:'right'});}
+            const dataNome=new Date().toISOString().slice(0,10);
+            doc.save(`relatorio-consigjus-${dataNome}.pdf`);
+        }
+
+        // Compatibilidade com chamadas antigas: mantém a função individual como atalho.
+        function buscarContratoNoHiscre(){
+            const numero=normalizarContrato(document.getElementById('contratoBusca')?.value);
+            const check=[...document.querySelectorAll('.contrato-selecao')].find(el=>normalizarContrato(el.value)===numero);
+            if(check) check.checked=true;
+            cruzarContratosSelecionados();
+        }
+
+        function showAnaliseResults() {
+            document.getElementById('analiseEmpty').style.display = 'none';
+            document.getElementById('analiseContent').style.display = 'block';
+
+            const tbody = document.getElementById('analiseTableBody');
+            tbody.innerHTML = '';
+
+            let totalOcorrencias = 0;
+            let semRef = 0;
+
+            Object.entries(objDadosPDF.rubricasUnicas).sort((a, b) => a[0].localeCompare(b[0])).forEach(([code, data]) => {
+                totalOcorrencias += data.ocorrencias;
+                if (data.descricao_ref === "Não encontrada na referência") semRef++;
+
+                const row = tbody.insertRow();
+                row.innerHTML = `
+                    <td><strong>${code}</strong></td>
+                    <td>${data.descricao_doc}</td>
+                    <td>${data.descricao_ref}</td>
+                    <td><span class="badge badge-success">${data.ocorrencias}</span></td>
+                `;
+            });
+
+            document.getElementById('metricTotal').textContent = Object.keys(objDadosPDF.rubricasUnicas).length;
+            document.getElementById('metricOcorrencias').textContent = totalOcorrencias;
+            document.getElementById('metricSemRef').textContent = semRef;
+        }
+
+        function showDescription(input, descId) {
+            const code = input.value.trim();
+            document.getElementById(descId).textContent = descricoesRubricas[code] || '';
+        }
+
+        function executarBuscaAutomatica() {
+            if (objDadosPDF.todasRubricasReal.length === 0) return;
+            executeSearch(false);
+        }
+
+        function obterValoresConsultados() {
+            return [1, 2, 3, 4].map(i => {
+                const input = document.getElementById(`valor${i}`);
+                if (!input || !input.value.trim()) return null;
+                const valor = parseValorMonetario(input.value);
+                return Number.isFinite(valor) ? Math.round(valor * 100) / 100 : null;
+            }).filter(v => v !== null);
+        }
+
+        function onValorConsultaInput(input) {
+            const texto = input.value.replace(/[^0-9,.-]/g, '');
+            input.value = texto;
+            const valor = parseValorMonetario(texto);
+            input.dataset.valorNumerico = Number.isFinite(valor) ? String(Math.round(valor * 100) / 100) : '';
+            executarBuscaAutomatica();
+        }
+
+        function centavos(valor) {
+            return Math.round(Number(valor) * 100);
+        }
+
+        function formatarValorConsulta(valor) {
+            return Number(valor).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+
+        function atualizarAvisosValores(valoresConsultados) {
+            const box = document.getElementById('avisosValores');
+            if (!box) return;
+
+            const avisos = [];
+            const valoresDocumento = objDadosPDF.todasRubricasReal
+                .map(d => Number.isFinite(d.valorNumero) ? d.valorNumero : parseValorMonetario(d.valor))
+                .filter(v => Number.isFinite(v));
+
+            valoresConsultados.forEach(valor => {
+                const alvoCent = centavos(valor);
+                const proximos = [...new Set(
+                    valoresDocumento
+                        .filter(v => Math.abs(centavos(v) - alvoCent) === 1)
+                        .map(v => Math.round(v * 100) / 100)
+                )].sort((a, b) => a - b);
+
+                if (proximos.length) {
+                    avisos.push(`O valor consultado <strong>R$ ${formatarValorConsulta(valor)}</strong> possui no documento valor(es) com diferença de 1 centavo: <strong>${proximos.map(v => 'R$ ' + formatarValorConsulta(v)).join(', ')}</strong>.`);
+                }
+            });
+
+            if (avisos.length) {
+                box.innerHTML = '⚠️ ' + avisos.join('<br>');
+                box.style.display = 'block';
+            } else {
+                box.innerHTML = '';
+                box.style.display = 'none';
+            }
+        }
+
+        function executeSearch(mostrarErro = true) {
+            if (objDadosPDF.todasRubricasReal.length === 0) {
+                if (mostrarErro) alert('Carregue um arquivo HISCRE para realizar a busca.');
+                return;
+            }
+
+            const filtros = [1,2,3,4].map(i => document.getElementById(`r${i}`).value.trim()).filter(v => v !== '');
+            const valoresConsultados = obterValoresConsultados();
+            atualizarAvisosValores(valoresConsultados);
+
+            dadosFiltradosBuscador = objDadosPDF.todasRubricasReal.filter(item => {
+                const matchRubrica = filtros.length === 0 || filtros.includes(item.rubrica);
+                const valor = Number.isFinite(item.valorNumero) ? item.valorNumero : parseValorMonetario(item.valor);
+                const matchValor = valoresConsultados.length === 0 || (Number.isFinite(valor) && valoresConsultados.some(v => centavos(valor) === centavos(v)));
+                return matchRubrica && matchValor;
+            });
+
+            displayBuscadorResults();
+        }
+
+        function prepararTelaBuscador() {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            const btnBuscador = document.querySelector('.tab-btn[onclick="switchTab(\'buscador\')"]');
+            if (btnBuscador) btnBuscador.classList.add('active');
+            document.getElementById('tab-buscador').classList.add('active');
+            document.getElementById('buscadorResult').style.display = 'block';
+            executeSearch(false);
+        }
+
+        function mostrarModalBeneficiario() {
+            document.getElementById('modalNome').textContent = objDadosPDF.nome || 'Não localizado';
+            document.getElementById('modalNB').textContent = objDadosPDF.nbs.length ? objDadosPDF.nbs.join(', ') : 'Não localizado';
+            document.getElementById('modalPeriodoInicial').textContent = objDadosPDF.periodoInicial || 'Não localizado';
+            document.getElementById('modalPeriodoFinal').textContent = objDadosPDF.periodoFinal || 'Não localizado';
+            document.getElementById('modalCompetencias').textContent = objDadosPDF.competenciasEncontradas?.length || 0;
+            document.getElementById('modalDataEmissao').textContent = objDadosPDF.dataEmissao || 'Não localizado';
+            const modal = document.getElementById('beneficiarioModal');
+            modal.classList.add('show');
+            modal.setAttribute('aria-hidden', 'false');
+        }
+
+        function fecharModalBeneficiario() {
+            const modal = document.getElementById('beneficiarioModal');
+            modal.classList.remove('show');
+            modal.setAttribute('aria-hidden', 'true');
+            const primeiroCampo = document.getElementById('r1');
+            if (primeiroCampo) primeiroCampo.focus();
+        }
+
+        function removerFiltros() {
+            [1,2,3,4].forEach(i => {
+                document.getElementById(`r${i}`).value = '';
+                document.getElementById(`desc${i}`).textContent = '';
+            });
+            [1,2,3,4].forEach(i => {
+                const input = document.getElementById(`valor${i}`);
+                if (input) { input.value = ''; input.dataset.valorNumerico = ''; }
+            });
+            const avisosValores = document.getElementById('avisosValores');
+            if (avisosValores) { avisosValores.innerHTML = ''; avisosValores.style.display = 'none'; }
+            currentFilter = 'all';
+            executeSearch(false);
+        }
+
+        function displayBuscadorResults() {
+            document.getElementById('buscadorResult').style.display = 'block';
+            document.getElementById('resultNome').textContent = objDadosPDF.nome || 'Não Localizado';
+            document.getElementById('resultNB').textContent = objDadosPDF.nbs.length > 0 ? objDadosPDF.nbs.join(', ') : 'Não Localizado';
+            document.getElementById('resultPeriodo').textContent = objDadosPDF.periodoInicial && objDadosPDF.periodoFinal ? `${objDadosPDF.periodoInicial} a ${objDadosPDF.periodoFinal}` : 'Não localizado';
+            document.getElementById('resultDataEmissao').textContent = objDadosPDF.dataEmissao || 'Não localizado';
+
+            const numProcesso = document.getElementById('numProcesso').value.trim();
+            document.getElementById('resultProcesso').textContent = numProcesso || 'Não informado';
+
+            const tbody = document.getElementById('buscadorTableBody');
+            tbody.innerHTML = '';
+
+            let dataExibida = dadosFiltradosBuscador;
+            if(currentFilter !== 'all') {
+                dataExibida = dadosFiltradosBuscador.filter(d => d.status === currentFilter);
+            }
+
+            if(dataExibida.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:red;">Nenhum registro encontrado para este filtro.</td></tr>`;
+            } else {
+                dataExibida.forEach(d => {
+                    const statusClass = d.status === 'Pago' ? 'badge-success' : 'badge-warning';
+                    const row = tbody.insertRow();
+                    row.innerHTML = `
+                        <td>${d.pagina}</td>
+                        <td>${d.competencia}</td>
+                        <td><strong>${d.rubrica}</strong></td>
+                        <td>${d.descricao}</td>
+                        <td style="white-space: nowrap; text-align: right; font-variant-numeric: tabular-nums;">${formatarMoedaBR(d.valorNumero)}</td>
+                        <td><span class="badge ${statusClass}">${d.status}</span></td>
+                    `;
+                });
+            }
+
+            const valoresConsultados = obterValoresConsultados();
+            const sufixoValor = valoresConsultados.length ? ` • ${valoresConsultados.length} valor(es) consultado(s)` : '';
+            document.getElementById('totalRegistrosTopo').innerHTML = `Total de registros listados: <strong>${dataExibida.length}</strong>${sufixoValor}`;
+        }
+
+        function toggleStatusFilter(filter) {
+            currentFilter = filter;
+            if (dadosFiltradosBuscador.length > 0) displayBuscadorResults();
+        }
+
+        // Copia toda a tabela atualmente exibida, com cabeçalho e todas as colunas.
+        // Usa TSV (tabulação) para que o Excel distribua cada campo em sua própria célula.
+        async function copiarValoresExibidos() {
+            if (dadosFiltradosBuscador.length === 0) return;
+
+            const dataExibida = currentFilter === 'all'
+                ? dadosFiltradosBuscador
+                : dadosFiltradosBuscador.filter(d => d.status === currentFilter);
+
+            if (dataExibida.length === 0) return;
+
+            const limparCampoExcel = (valor) => String(valor ?? '')
+                .replace(/\t/g, ' ')
+                .replace(/\r?\n/g, ' ')
+                .trim();
+
+            // Cabeçalho + todas as colunas da tabela, separados por TAB.
+            // O valor monetário permanece no padrão brasileiro, sem "R$",
+            // permitindo que o Excel reconheça a célula como número em pt-BR.
+            const linhas = [
+                ['Página', 'Competência', 'Rubrica', 'Descrição', 'Valor (R$)', 'Status'],
+                ...dataExibida.map(d => {
+                    const numero = Number.isFinite(d.valorNumero)
+                        ? d.valorNumero
+                        : parseValorMonetario(d.valor);
+                    const valor = Number.isFinite(numero)
+                        ? numero.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+                        : '0,00';
+
+                    return [
+                        d.pagina,
+                        d.competencia,
+                        d.rubrica,
+                        d.descricao,
+                        valor,
+                        d.status
+                    ];
+                })
+            ];
+
+            const tsv = linhas
+                .map(linha => linha.map(limparCampoExcel).join('\t'))
+                .join('\r\n');
+
+            // Também prepara uma versão HTML. Quando o navegador permite
+            // ClipboardItem, o Excel pode receber a estrutura tabular diretamente.
+            const escapeHtml = (valor) => String(valor ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;');
+
+            const html = '<table>' + linhas.map((linha, indice) => {
+                const tag = indice === 0 ? 'th' : 'td';
+                return '<tr>' + linha.map(celula => `<${tag}>${escapeHtml(limparCampoExcel(celula))}</${tag}>`).join('') + '</tr>';
+            }).join('') + '</table>';
+
+            try {
+                if (navigator.clipboard && window.ClipboardItem) {
+                    const item = new ClipboardItem({
+                        'text/plain': new Blob([tsv], { type: 'text/plain' }),
+                        'text/html': new Blob([html], { type: 'text/html' })
+                    });
+                    await navigator.clipboard.write([item]);
+                } else if (navigator.clipboard) {
+                    await navigator.clipboard.writeText(tsv);
+                } else {
+                    throw new Error('Clipboard API indisponível');
+                }
+            } catch (e) {
+                const textarea = document.createElement('textarea');
+                textarea.value = tsv;
+                textarea.style.position = 'fixed';
+                textarea.style.left = '-9999px';
+                textarea.style.top = '0';
+                document.body.appendChild(textarea);
+                textarea.focus();
+                textarea.select();
+                document.execCommand('copy');
+                textarea.remove();
+            }
+
+            const feedback = document.getElementById('copyValuesFeedback');
+            feedback.textContent = `${dataExibida.length + 1} linha(s) copiadas — tabela completa`;
+            feedback.classList.add('show');
+            clearTimeout(window._copyFeedbackTimer);
+            window._copyFeedbackTimer = setTimeout(() => feedback.classList.remove('show'), 2200);
+        }
+
+        function clearFile() {
+            uploadedFile = null;
+            objDadosPDF = { nome: "", nbs: [], rubricasUnicas: {}, todasRubricasReal: [], competenciasEncontradas: [], periodoInicial: "", periodoFinal: "", dataEmissao: "" };
+            dadosFiltradosBuscador = [];
+
+            document.getElementById('fileInput').value = '';
+            document.getElementById('fileInfo').style.display = 'none';
+            document.getElementById('btnClear').style.display = 'none';
+            document.getElementById('statusInfo').textContent = 'Nenhum arquivo carregado';
+
+            document.getElementById('analiseEmpty').style.display = 'block';
+            document.getElementById('analiseContent').style.display = 'none';
+            document.getElementById('buscadorResult').style.display = 'none';
+
+            document.getElementById('nomeAutor').value = '';
+            document.getElementById('numProcesso').value = '';
+            [1,2,3,4].forEach(i => {
+                const input = document.getElementById(`valor${i}`);
+                if (input) { input.value = ''; input.dataset.valorNumerico = ''; }
+            });
+            const avisosValores = document.getElementById('avisosValores');
+            if (avisosValores) { avisosValores.innerHTML = ''; avisosValores.style.display = 'none'; }
+            fecharModalBeneficiario();
+        }
+
+        function exportToCSV() {
+            if (Object.keys(objDadosPDF.rubricasUnicas).length === 0) return;
+            let csv = 'Rubrica;Descrição no Documento;Descrição de Referência;Ocorrências\n';
+            Object.entries(objDadosPDF.rubricasUnicas).forEach(([code, data]) => {
+                csv += `${code};"${data.descricao_doc}";"${data.descricao_ref}";${data.ocorrencias}\n`;
+            });
+            downloadFile(csv, 'analise_rubricas_unicas.csv', 'text/csv');
+        }
+
+        function exportToPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            doc.setFontSize(16);
+            doc.text('RELATÓRIO DE ANÁLISE DE RUBRICAS - HISCRE', 105, 20, { align: 'center' });
+            doc.setFontSize(12);
+            doc.text('Buscador Institucional', 105, 30, { align: 'center' });
+
+            const tableData = Object.entries(objDadosPDF.rubricasUnicas).map(([code, data]) => [
+                code, data.descricao_doc, data.descricao_ref, data.ocorrencias
+            ]);
+            doc.autoTable({
+                startY: 40,
+                head: [['Rubrica', 'Descrição no Documento', 'Descrição de Referência', 'Ocorrências']],
+                body: tableData,
+                theme: 'grid'
+            });
+            doc.save('analise_rubricas_hiscre.pdf');
+        }
+
+        function exportBuscadorCSV() {
+            let dataExportar = currentFilter === 'all' ? dadosFiltradosBuscador : dadosFiltradosBuscador.filter(d => d.status === currentFilter);
+            if (dataExportar.length === 0) return;
+
+            let csv = 'Página;Competência;Rubrica;Descrição;Valor (R$);Status\n';
+            dataExportar.forEach(d => {
+                let valorNumerico = Number.isFinite(d.valorNumero) ? d.valorNumero : parseValorMonetario(d.valor);
+                let valorCSV = Number.isFinite(valorNumerico) ? valorNumerico.toFixed(2).replace('.', ',') : '0,00';
+                csv += `${d.pagina};${d.competencia};${d.rubrica};"${d.descricao}";${valorCSV};${d.status}\n`;
+            });
+            downloadFile(csv, 'busca_hiscre.csv', 'text/csv');
+        }
+
+        // ============================================================
+        // PDF CLÁSSICO (original - mantido)
+        // ============================================================
+        function exportBuscadorPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+
+            // Faixa azul larga no topo
+            doc.setFillColor(44, 82, 130);
+            doc.rect(0, 0, 210, 25, 'F');
+
+            // Título em branco sobre a faixa azul
+            doc.setFontSize(16);
+            doc.setFont("helvetica", "bold");
+            doc.setTextColor(255, 255, 255);
+            doc.text('RELATÓRIO DE RUBRICAS HISCRE', 14, 16);
+
+            // Subtítulo
+            doc.setFontSize(10);
+            doc.setFont("helvetica", "normal");
+            doc.text('Documento gerado a partir do sistema local', 14, 22);
+
+            // Linha verde delicada abaixo da faixa azul
+            doc.setDrawColor(56, 178, 172);
+            doc.setLineWidth(0.5);
+            doc.line(14, 28, 196, 28);
+
+            // Seção de Informações do Documento Carregado
+            doc.setFont("helvetica", "bold");
+            doc.setTextColor(30, 58, 95);
+            doc.setFontSize(11);
+            // Ícone vetorial simples: evita glifos quebrados de emoji no PDF.
+            doc.setFillColor(44, 82, 130);
+            doc.circle(17, 35.5, 2.5, 'F');
+            doc.setFillColor(255, 255, 255);
+            doc.circle(17, 34.8, 0.75, 'F');
+            doc.roundedRect(15.5, 36, 3, 1.2, 0.5, 0.5, 'F');
+            doc.setTextColor(30, 58, 95);
+            doc.text('Informações do Documento Carregado', 22, 38);
+
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(10);
+            const nomeAutora = document.getElementById('nomeAutor').value || objDadosPDF.nome || 'Não informado';
+            const nbsStr = objDadosPDF.nbs.length > 0 ? objDadosPDF.nbs.join(', ') : 'Não informado';
+            const dataEmissaoDocumento = objDadosPDF.dataEmissao || 'Não localizada';
+            const numProcesso = document.getElementById('numProcesso').value.trim() || 'Não informado';
+
+            const filtros = [
+                document.getElementById('r1').value.trim(),
+                document.getElementById('r2').value.trim(),
+                document.getElementById('r3').value.trim(),
+                document.getElementById('r4').value.trim()
+            ].filter(v => v !== '');
+
+            const rubricasStr = filtros.length > 0 ? filtros.join(', ') : 'Todas as rubricas';
+
+            doc.text(`Nome: ${nomeAutora}`, 14, 46);
+            doc.text(`NB(s): ${nbsStr}`, 110, 46);
+            doc.text(`Data de emissão do documento: ${dataEmissaoDocumento}`, 14, 52);
+            doc.text(`Rubricas Buscadas: ${rubricasStr}`, 110, 52);
+
+            if(numProcesso !== 'Não informado') {
+                doc.text(`Número do Processo: ${numProcesso}`, 14, 58);
+            }
+
+            let dataExportar = currentFilter === 'all' ? dadosFiltradosBuscador : dadosFiltradosBuscador.filter(d => d.status === currentFilter);
+
+            const tableData = dataExportar.map(d => [
+                d.pagina.toString(),
+                d.competencia, 
+                d.rubrica, 
+                d.descricao, 
+                formatarMoedaBR(d.valorNumero), 
+                d.status
+            ]);
+
+            const startY = numProcesso !== 'Não informado' ? 66 : 60;
+
+            doc.autoTable({
+                startY: startY,
+                head: [['Pág.', 'Comp.', 'Rubrica', 'Descrição', 'Valor (R$)', 'Status']],
+                body: tableData,
+                theme: 'grid',
+                headStyles: { 
+                    fillColor: [44, 82, 130],
+                    textColor: 255,
+                    fontStyle: 'bold'
+                },
+                styles: { 
+                    fontSize: 9, 
+                    cellPadding: 4,
+                    overflow: 'linebreak'
+                },
+                columnStyles: {
+                    0: { cellWidth: 15 },
+                    1: { cellWidth: 25 },
+                    2: { cellWidth: 20 },
+                    3: { cellWidth: 75 },
+                    4: { cellWidth: 30 },
+                    5: { cellWidth: 20 }
+                },
+                didDrawPage: function (data) {
+                    doc.setFontSize(8);
+                    doc.setFont("helvetica", "italic");
+                    doc.setTextColor(100);
+                    doc.text('Gerado pelo Buscador de rubricas do HISCRE • Sistema desenvolvido para uso interno', 
+                        data.settings.margin.left, 
+                        doc.internal.pageSize.height - 10
+                    );
+                }
+            });
+
+            doc.save('relatorio_rubricas_hiscre.pdf');
+        }
+
+        // ============================================================
+        // PDF MODERNO — Design System Governamental / Enterprise
+        // ============================================================
+        function exportBuscadorPDFModerno() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+
+            // ─── PALETA INSTITUCIONAL ───
+            const C = {
+                primary:    [26, 54, 93],      // #1a365d
+                primaryMid: [44, 82, 130],     // #2c5282
+                primaryLt:  [43, 108, 176],    // #2b6cb0
+                accent:     [56, 178, 172],    // #38b2ac
+                success:    [22, 163, 74],     // #16a34a
+                danger:     [220, 38, 38],     // #dc2626
+                warning:    [217, 119, 6],     // #d97706
+                gray100:    [243, 244, 246],   // #f3f4f6
+                gray200:    [229, 231, 235],   // #e5e7eb
+                gray400:    [156, 163, 175],   // #9ca3af
+                gray500:    [107, 114, 128],   // #6b7280
+                gray600:    [75, 85, 99],      // #4b5563
+                gray700:    [55, 65, 81],      // #374151
+                gray800:    [31, 41, 55],      // #1f2937
+                white:      [255, 255, 255],
+                black:      [0, 0, 0]
+            };
+
+            // ─── HELPERS ───
+            const setFill = (c) => doc.setFillColor(c[0], c[1], c[2]);
+            const setText = (c) => doc.setTextColor(c[0], c[1], c[2]);
+            const setDraw = (c, w) => { doc.setDrawColor(c[0], c[1], c[2]); doc.setLineWidth(w || 0.2); };
+
+            // ─── DADOS ───
+            const nomeAutora = document.getElementById('nomeAutor').value || objDadosPDF.nome || 'Não informado';
+            const nbsStr = objDadosPDF.nbs.length > 0 ? objDadosPDF.nbs.join(', ') : 'Não informado';
+            const numProcesso = document.getElementById('numProcesso').value.trim() || 'Não informado';
+            const dataAtual = new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
+            const horaAtual = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+
+            const filtros = [
+                document.getElementById('r1').value.trim(),
+                document.getElementById('r2').value.trim(),
+                document.getElementById('r3').value.trim(),
+                document.getElementById('r4').value.trim()
+            ].filter(v => v !== '');
+            const rubricasStr = filtros.length > 0 ? filtros.join(', ') : 'Todas as rubricas do documento';
+            const valoresConsultados = obterValoresConsultados();
+            const filtroValorStr = valoresConsultados.length
+                ? `Valores: ${valoresConsultados.map(v => formatarMoedaBR(v)).join(', ')}`
+                : 'Sem filtro de valor';
+
+            let dataExportar = currentFilter === 'all' 
+                ? dadosFiltradosBuscador 
+                : dadosFiltradosBuscador.filter(d => d.status === currentFilter);
+
+            const totalRegistros = dataExportar.length;
+            const totalPagos = dataExportar.filter(d => d.status === 'Pago').length;
+            const totalNaoPagos = dataExportar.filter(d => d.status === 'Não Pago').length;
+            const rubricasUnicasCount = new Set(dataExportar.map(d => d.rubrica)).size;
+
+            // ═══════════════════════════════════════════════════════════
+            // PÁGINA 1 — CAPA / DASHBOARD
+            // ═══════════════════════════════════════════════════════════
+
+            // Fundo cinza claro
+            setFill(C.gray100);
+            doc.rect(0, 0, 210, 297, 'F');
+
+            // ─── HEADER INSTITUCIONAL ───
+            setFill(C.primary);
+            doc.rect(0, 0, 210, 42, 'F');
+            setFill(C.primaryMid);
+            doc.rect(140, 0, 70, 42, 'F');
+
+            // Detalhe diagonal decorativo
+            setDraw([255,255,255], 0.3);
+            doc.line(160, 0, 190, 42);
+            doc.line(162, 0, 192, 42);
+
+            // Logo / ícone
+            setFill(C.white);
+            doc.roundedRect(14, 10, 22, 22, 3, 3, 'F');
+            setText(C.primary);
+            doc.setFontSize(14);
+            doc.setFont('helvetica', 'bold');
+            doc.text('H', 25, 24, { align: 'center' });
+
+            // Título principal
+            setText(C.white);
+            doc.setFontSize(18);
+            doc.setFont('helvetica', 'bold');
+            doc.text('Buscador Institucional de Rubricas', 42, 20);
+
+            doc.setFontSize(10);
+            doc.setFont('helvetica', 'normal');
+            doc.text('Sistema de Análise Documental HISCRE', 42, 27);
+
+            // Badge no header
+            setDraw([255,255,255], 0.15);
+            doc.roundedRect(42, 31, 58, 7, 3.5, 3.5, 'S');
+            doc.setFontSize(8);
+            doc.text('Processamento 100% Local', 45, 35.5);
+
+            // Data no canto direito
+            setText([200,200,200]);
+            doc.setFontSize(9);
+            doc.text('EMISSÃO DO DOCUMENTO', 170, 16, { align: 'right' });
+            doc.setFontSize(11);
+            doc.setFont('helvetica', 'bold');
+            doc.text(objDadosPDF.dataEmissao || 'Não localizada', 196, 24, { align: 'right' });
+
+            // ─── SEPARADOR VERDE ───
+            setFill(C.accent);
+            doc.rect(0, 42, 210, 1.5, 'F');
+
+            // ─── SEÇÃO: INFORMAÇÕES DO DOCUMENTO CARREGADO (Cards) ───
+            let y = 54;
+
+            setText(C.gray800);
+            doc.setFontSize(11);
+            doc.setFont('helvetica', 'bold');
+            doc.text('INFORMACOES DO DOCUMENTO CARREGADO', 14, y);
+
+            y += 10;
+
+            // Card 1 — Nome (6 colunas ~104mm)
+            setFill(C.white);
+            setDraw(C.gray200, 0.3);
+            doc.roundedRect(14, y, 104, 28, 3, 3, 'FD');
+            setFill(C.primary);
+            doc.roundedRect(18, y+4, 7, 7, 1.5, 1.5, 'F');
+            setText(C.white);
+            doc.setFontSize(6);
+            doc.text('U', 21.5, y+8.5, { align: 'center' });
+            setText(C.gray500);
+            doc.setFontSize(8);
+            doc.setFont('helvetica', 'bold');
+            doc.text('NOME DA PARTE AUTORA', 28, y+9);
+            setText(C.primary);
+            doc.setFontSize(11);
+            doc.setFont('helvetica', 'bold');
+            const nomeTruncado = nomeAutora.length > 38 ? nomeAutora.substring(0, 38) + '...' : nomeAutora;
+            doc.text(nomeTruncado, 18, y+20);
+
+            // Card 2 — NB (3 colunas ~50mm)
+            setFill(C.white);
+            doc.roundedRect(122, y, 50, 28, 3, 3, 'FD');
+            setFill(C.success);
+            doc.roundedRect(126, y+4, 7, 7, 1.5, 1.5, 'F');
+            setText(C.white);
+            doc.setFontSize(6);
+            doc.text('#', 129.5, y+8.5, { align: 'center' });
+            setText(C.gray500);
+            doc.setFontSize(8);
+            doc.setFont('helvetica', 'bold');
+            doc.text('NB(s)', 136, y+9);
+            setText(C.gray800);
+            doc.setFontSize(10);
+            doc.setFont('helvetica', 'bold');
+            doc.text(nbsStr, 126, y+20);
+
+            // Card 3 — Processo (3 colunas ~24mm restante)
+            setFill(C.white);
+            doc.roundedRect(176, y, 20, 28, 3, 3, 'FD');
+            setFill(C.warning);
+            doc.roundedRect(180, y+4, 7, 7, 1.5, 1.5, 'F');
+            setText(C.white);
+            doc.setFontSize(6);
+            doc.text('P', 183.5, y+8.5, { align: 'center' });
+            setText(C.gray500);
+            doc.setFontSize(8);
+            doc.setFont('helvetica', 'bold');
+            doc.text('PROCESSO', 190, y+9);
+            setText(C.gray800);
+            doc.setFontSize(7);
+            doc.setFont('helvetica', 'bold');
+            const procTruncado = numProcesso.length > 22 ? numProcesso.substring(0, 22) + '...' : numProcesso;
+            doc.text(procTruncado, 180, y+20);
+
+            y += 36;
+
+            // ─── MÉTRICAS RÁPIDAS (4 cards) ───
+            const metricCards = [
+                { label: 'RUBRICAS UNICAS', value: rubricasUnicasCount.toString(), color: C.primaryMid },
+                { label: 'TOTAL REGISTROS', value: totalRegistros.toString(), color: C.success },
+                { label: 'REGISTROS PAGOS', value: totalPagos.toString(), color: C.success },
+                { label: 'NAO PAGOS', value: totalNaoPagos.toString(), color: C.danger }
+            ];
+
+            const cardW = 44;
+            const cardGap = 3.3;
+            metricCards.forEach((m, i) => {
+                const cx = 14 + i * (cardW + cardGap);
+                setFill(C.white);
+                doc.roundedRect(cx, y, cardW, 26, 3, 3, 'FD');
+                setFill(m.color);
+                doc.rect(cx, y, 3, 26, 'F');
+                setText(C.gray500);
+                doc.setFontSize(7);
+                doc.setFont('helvetica', 'bold');
+                doc.text(m.label, cx + 6, y + 8);
+                setText(C.gray800);
+                doc.setFontSize(18);
+                doc.setFont('helvetica', 'bold');
+                doc.text(m.value, cx + 6, y + 21);
+            });
+
+            y += 34;
+
+            // ─── FILTROS APLICADOS ───
+            setFill(C.white);
+            doc.roundedRect(14, y, 182, 24, 3, 3, 'FD');
+            setFill(C.primary);
+            doc.rect(14, y, 3, 24, 'F');
+            setText(C.gray500);
+            doc.setFontSize(8);
+            doc.setFont('helvetica', 'bold');
+            doc.text('RUBRICAS BUSCADAS', 20, y + 7);
+            setText(C.primary);
+            doc.setFontSize(10);
+            doc.setFont('helvetica', 'bold');
+            doc.text(rubricasStr, 20, y + 13);
+            setText(C.gray400);
+            doc.setFontSize(8);
+            doc.setFont('helvetica', 'normal');
+            doc.text(`Filtro de status: ${currentFilter === 'all' ? 'Todos' : currentFilter}`, 140, y + 8);
+            doc.text(filtroValorStr, 20, y + 19);
+
+            y += 32;
+
+            // ─── TABELA DATAGRID ───
+            setText(C.gray800);
+            doc.setFontSize(11);
+            doc.setFont('helvetica', 'bold');
+            doc.text('RESULTADOS DA BUSCA', 14, y);
+            setText(C.gray500);
+            doc.setFontSize(9);
+            doc.setFont('helvetica', 'normal');
+            doc.text(`${totalRegistros} registros encontrados`, 14, y + 6);
+
+            y += 10;
+
+            const tableData = dataExportar.map(d => [
+                d.pagina.toString(),
+                d.competencia,
+                d.rubrica,
+                d.descricao,
+                formatarMoedaBR(d.valorNumero),
+                d.status
+            ]);
+
+            doc.autoTable({
+                startY: y,
+                head: [['Pag.', 'Comp.', 'Rubrica', 'Descricao', 'Valor (R$)', 'Status']],
+                body: tableData,
+                theme: 'grid',
+                headStyles: {
+                    fillColor: C.primary,
+                    textColor: [255,255,255],
+                    fontStyle: 'bold',
+                    fontSize: 8,
+                    cellPadding: { top: 5, right: 4, bottom: 5, left: 4 }
+                },
+                styles: {
+                    fontSize: 8,
+                    cellPadding: { top: 4, right: 4, bottom: 4, left: 4 },
+                    overflow: 'linebreak',
+                    lineColor: C.gray200,
+                    lineWidth: 0.2
+                },
+                alternateRowStyles: {
+                    fillColor: [250, 251, 252]
+                },
+                columnStyles: {
+                    0: { cellWidth: 14, halign: 'center', fontStyle: 'bold' },
+                    1: { cellWidth: 22, halign: 'center' },
+                    2: { cellWidth: 18, halign: 'center', fontStyle: 'bold' },
+                    3: { cellWidth: 78 },
+                    4: { cellWidth: 28, halign: 'right', fontStyle: 'bold' },
+                    5: { cellWidth: 22, halign: 'center' }
+                },
+                didParseCell: function(data) {
+                    // Badges coloridos para status
+                    if (data.section === 'body' && data.column.index === 5) {
+                        const status = data.cell.raw;
+                        if (status === 'Pago') {
+                            data.cell.styles.fillColor = [220, 252, 231]; // green-100
+                            data.cell.styles.textColor = [22, 101, 52];  // green-800
+                            data.cell.styles.fontStyle = 'bold';
+                        } else if (status === 'Não Pago') {
+                            data.cell.styles.fillColor = [254, 226, 226]; // red-100
+                            data.cell.styles.textColor = [153, 27, 27];  // red-800
+                            data.cell.styles.fontStyle = 'bold';
+                        }
+                    }
+                    // Badge colorido para rubrica (col 2)
+                    if (data.section === 'body' && data.column.index === 2) {
+                        const code = data.cell.raw;
+                        if (code.startsWith('1')) {
+                            data.cell.styles.fillColor = [239, 246, 255]; // blue-50
+                            data.cell.styles.textColor = [29, 78, 216]; // blue-700
+                        } else if (code.startsWith('2')) {
+                            data.cell.styles.fillColor = [254, 242, 242]; // red-50
+                            data.cell.styles.textColor = [185, 28, 28];  // red-700
+                        } else if (code.startsWith('3')) {
+                            data.cell.styles.fillColor = [240, 253, 244]; // green-50
+                            data.cell.styles.textColor = [21, 128, 61];  // green-700
+                        } else {
+                            data.cell.styles.fillColor = [250, 250, 250];
+                            data.cell.styles.textColor = [75, 85, 99];
+                        }
+                    }
+                },
+                didDrawPage: function(data) {
+                    // Footer institucional
+                    const pageHeight = doc.internal.pageSize.height;
+                    setFill(C.gray100);
+                    doc.rect(0, pageHeight - 18, 210, 18, 'F');
+                    setDraw(C.gray200, 0.3);
+                    doc.line(14, pageHeight - 18, 196, pageHeight - 18);
+
+                    setText(C.gray500);
+                    doc.setFontSize(8);
+                    doc.setFont('helvetica', 'normal');
+                    doc.text('Buscador de Rubricas do HISCRE', 14, pageHeight - 10);
+
+                    setText(C.gray400);
+                    doc.setFontSize(7);
+                    doc.text('Sistema desenvolvido para uso interno - Documento confidencial', 14, pageHeight - 6);
+
+                    const pageStr = `Pagina ${data.pageNumber} de ${data.pageCount}`;
+                    doc.text(pageStr, 196, pageHeight - 8, { align: 'right' });
+                    doc.text(`Gerado em ${dataAtual} as ${horaAtual}`, 196, pageHeight - 4, { align: 'right' });
+                },
+                margin: { top: 10, right: 14, bottom: 22, left: 14 }
+            });
+
+            // ─── FOOTER DA CAPA ───
+            const finalY = doc.lastAutoTable ? doc.lastAutoTable.finalY + 10 : 250;
+            if (finalY < 270) {
+                setFill(C.white);
+                doc.roundedRect(14, finalY, 182, 22, 3, 3, 'FD');
+                setFill(C.primary);
+                doc.roundedRect(14, finalY, 22, 22, 3, 3, 'F');
+                setText(C.white);
+                doc.setFontSize(10);
+                doc.setFont('helvetica', 'bold');
+                doc.text('H', 25, finalY + 13, { align: 'center' });
+
+                setText(C.gray800);
+                doc.setFontSize(10);
+                doc.setFont('helvetica', 'bold');
+                doc.text('Buscador de Rubricas do HISCRE', 40, finalY + 9);
+                setText(C.gray400);
+                doc.setFontSize(8);
+                doc.setFont('helvetica', 'normal');
+                doc.text('Sistema desenvolvido para uso interno', 40, finalY + 15);
+
+                setText(C.gray400);
+                doc.setFontSize(8);
+                doc.text(`Gerado em ${dataAtual} as ${horaAtual}`, 196, finalY + 12, { align: 'right' });
+            }
+
+            doc.save('relatorio_rubricas_hiscre_moderno.pdf');
+        }
+
+        function downloadFile(content, filename, type) {
+            const blob = new Blob(['\uFEFF' + content], { type: type + ';charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+    </script>
+</body>
+</html>
